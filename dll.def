@@ -1,0 +1,9 @@
+EXPORTS
+	DoStartWatch
+	DoEndWatch
+	DoSuspendProcess
+	DoSuspendWindow
+	DoAction
+	DoStartWatch
+	DoEndWatch
+	DoGetTargetWindow
