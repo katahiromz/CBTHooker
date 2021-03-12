@@ -89,6 +89,8 @@ CBTHOOKAPI VOID APIENTRY DoAction(HWND hwnd, ACTION_TYPE iAction)
 {
     switch (iAction)
     {
+    case AT_NOTHING: // Do nothing
+        break;
     case AT_SUSPEND: // Suspend
         DoSuspendWindow(hwnd, TRUE);
         break;

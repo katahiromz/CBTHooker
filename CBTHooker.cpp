@@ -122,13 +122,13 @@ void OnOK(HWND hwnd)
         data.has_tid = (IsDlgButtonChecked(hwnd, chx4) == BST_CHECKED);
 
         TCHAR szText[64];
-        GetDlgItemText(hwnd, cmb2, data.cls, MAX_PATH);
-        GetDlgItemText(hwnd, cmb3, data.txt, MAX_PATH);
-        GetDlgItemText(hwnd, cmb4, szText, 64);
+        GetDlgItemText(hwnd, cmb2, data.cls, _countof(data.cls));
+        GetDlgItemText(hwnd, cmb3, data.txt, _countof(data.txt));
 
+        GetDlgItemText(hwnd, cmb4, szText, _countof(szText));
         data.pid = _tcstoul(szText, NULL, 0);
 
-        GetDlgItemText(hwnd, cmb5, szText, 64);
+        GetDlgItemText(hwnd, cmb5, szText, _countof(szText));
         data.tid = _tcstoul(szText, NULL, 0);
 
         i = SendDlgItemMessage(hwnd, cmb6, CB_GETCURSEL, 0, 0);
