@@ -8,6 +8,7 @@
 
 #define TIMER_ID 0xFEEDBEEF
 
+static HINSTANCE s_hInst = NULL;
 static BOOL s_bWatching = FALSE;
 
 static const UINT s_action_ids[] =
@@ -32,6 +33,11 @@ LPTSTR LoadStringDx(INT nID)
 
 BOOL OnInitDialog(HWND hwnd, HWND hwndFocus, LPARAM lParam)
 {
+    HICON hIcon = LoadIcon(s_hInst, MAKEINTRESOURCE(IDI_MAINICON));
+
+    SendMessage(hwnd, WM_SETICON, ICON_BIG, (LPARAM)hIcon);
+    SendMessage(hwnd, WM_SETICON, ICON_SMALL, (LPARAM)hIcon);
+
     static const UINT s_cbt_sids[] =
     {
         IDS_HCBT_ACTIVATE, IDS_HCBT_CREATEWND, IDS_HCBT_DESTROYWND,
@@ -300,6 +306,7 @@ WinMain(HINSTANCE   hInstance,
         LPSTR       lpCmdLine,
         INT         nCmdShow)
 {
+    s_hInst = hInstance;
     InitCommonControls();
     DialogBox(hInstance, MAKEINTRESOURCE(IDD_MAIN), NULL, DialogProc);
     return 0;

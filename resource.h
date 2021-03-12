@@ -5,6 +5,8 @@
 
 #define IDD_MAIN                            100
 
+#define IDI_MAINICON                        100
+
 #define IDS_HCBT_ACTIVATE                   100
 #define IDS_HCBT_CREATEWND                  101
 #define IDS_HCBT_DESTROYWND                 102
