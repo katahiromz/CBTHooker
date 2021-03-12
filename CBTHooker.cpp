@@ -132,10 +132,26 @@ void OnOK(HWND hwnd)
         GetDlgItemText(hwnd, cmb3, data.txt, _countof(data.txt));
 
         GetDlgItemText(hwnd, cmb4, szText, _countof(szText));
-        data.pid = _tcstoul(szText, NULL, 0);
+        if (szText[0])
+        {
+            data.pid = _tcstoul(szText, NULL, 0);
+        }
+        else
+        {
+            data.has_pid = FALSE;
+            data.pid = 0;
+        }
 
         GetDlgItemText(hwnd, cmb5, szText, _countof(szText));
-        data.tid = _tcstoul(szText, NULL, 0);
+        if (szText[0])
+        {
+            data.tid = _tcstoul(szText, NULL, 0);
+        }
+        else
+        {
+            data.has_tid = FALSE;
+            data.tid = 0;
+        }
 
         i = SendDlgItemMessage(hwnd, cmb6, CB_GETCURSEL, 0, 0);
         data.iAction = static_cast<ACTION_TYPE>(i);
