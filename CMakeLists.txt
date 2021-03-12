@@ -40,6 +40,7 @@ add_definitions(-DUNICODE -D_UNICODE)
 
 # dll.dll
 add_library(dll SHARED dll.cpp dll.def)
+target_link_libraries(dll PRIVATE shlwapi)
 set_target_properties(dll PROPERTIES PREFIX "")
 target_compile_definitions(dll PRIVATE -DCBTHOOK_DLL)
 

@@ -1,5 +1,6 @@
 #include "CBTHooker.h"
 #include <tlhelp32.h>
+#include <shlwapi.h>
 #include <cassert>
 
 #define SHARE_NAME TEXT("CBT Hooker Share")
@@ -37,6 +38,7 @@ static void DoUnMap(CBTMAP *pMap)
 {
     if (pMap)
     {
+        FlushViewOfFile(pMap->pData, sizeof(*pMap->pData));
         UnmapViewOfFile(pMap->pData);
         CloseHandle(pMap->hMapping);
         delete pMap;
@@ -98,19 +100,19 @@ CBTHOOKAPI VOID APIENTRY DoAction(HWND hwnd, ACTION_TYPE iAction)
         DoSuspendWindow(hwnd, FALSE);
         break;
     case AT_MAXIMIZE: // Maximize
-        ShowWindow(hwnd, SW_MAXIMIZE);
+        ShowWindowAsync(hwnd, SW_MAXIMIZE);
         break;
     case AT_MINIMIZE: // Minimize
-        ShowWindow(hwnd, SW_MINIMIZE);
+        ShowWindowAsync(hwnd, SW_MINIMIZE);
         break;
     case AT_RESTORE: // Restore
-        ShowWindow(hwnd, SW_RESTORE);
+        ShowWindowAsync(hwnd, SW_RESTORE);
         break;
     case AT_SHOW: // Show
-        ShowWindow(hwnd, SW_SHOWNOACTIVATE);
+        ShowWindowAsync(hwnd, SW_SHOWNORMAL);
         break;
     case AT_HIDE: // Hide
-        ShowWindow(hwnd, SW_HIDE);
+        ShowWindowAsync(hwnd, SW_HIDE);
         break;
     case AT_CLOSE: // Close
         PostMessage(hwnd, WM_CLOSE, 0, 0);
@@ -128,14 +130,14 @@ static BOOL DoesMatch(HWND hwnd, CBTDATA *pData)
 
     if (bMatched && pData->has_cls)
     {
-        GetClassName(hwnd, szText, MAX_PATH);
+        GetClassName(hwnd, szText, _countof(szText));
         if (lstrcmpi(szText, pData->cls) != 0)
             bMatched = FALSE;
     }
     if (bMatched && pData->has_txt)
     {
-        GetWindowText(hwnd, szText, MAX_PATH);
-        if (lstrcmpi(szText, pData->txt) != 0)
+        GetWindowText(hwnd, szText, _countof(szText));
+        if (StrStrI(szText, pData->txt) != 0)
             bMatched = FALSE;
     }
     if (bMatched && pData->has_pid)
@@ -152,20 +154,17 @@ static BOOL DoesMatch(HWND hwnd, CBTDATA *pData)
             bMatched = FALSE;
     }
 
-    if (bMatched && !pData->hwndFound)
-        pData->hwndFound = hwnd;
-
     return bMatched;
 }
 
 static VOID
-DoTarget(HWND hwnd, CBTDATA *pData)
+DoTarget(HWND hwnd, CBTDATA *pData, INT nCode)
 {
-    if (pData->iAction == 0)
-        return;
-
     if (DoesMatch(hwnd, pData))
     {
+        pData->hwndFound = hwnd;
+        PostMessage(pData->hwndNotify, (WM_USER + 100),
+                    reinterpret_cast<WPARAM>(hwnd), WORD(nCode));
         DoAction(hwnd, pData->iAction);
     }
 }
@@ -189,7 +188,7 @@ CBTProc(INT nCode, WPARAM wParam, LPARAM lParam)
         case HCBT_MOVESIZE:
         case HCBT_SETFOCUS:
             if (pData->nCode == nCode)
-                DoTarget(hwnd, pData);
+                DoTarget(hwnd, pData, nCode);
             break;
         }
         DoUnMap(pMap);
@@ -209,14 +208,12 @@ CBTHOOKAPI BOOL APIENTRY DoStartWatch(const CBTDATA *pData)
                                    0, sizeof(CBTDATA), SHARE_NAME);
     if (s_hMapping == NULL)
     {
-        MessageBox(NULL, TEXT("ERROR #1"), NULL, MB_ICONERROR);
         return FALSE;
     }
 
     LPVOID pView = MapViewOfFile(s_hMapping, FILE_MAP_ALL_ACCESS, 0, 0, sizeof(CBTDATA));
     if (!pView)
     {
-        MessageBox(NULL, TEXT("ERROR #2"), NULL, MB_ICONERROR);
         CloseHandle(s_hMapping);
         s_hMapping = NULL;
         return FALSE;
@@ -224,15 +221,18 @@ CBTHOOKAPI BOOL APIENTRY DoStartWatch(const CBTDATA *pData)
 
     CBTDATA *pNew = reinterpret_cast<CBTDATA*>(pView);
     *pNew = *pData;
+    pNew->hwndFound = NULL;
     pNew->hHook = SetWindowsHookEx(WH_CBT, CBTProc, s_hinstDLL, 0);
     if (!pNew->hHook)
     {
-        MessageBox(NULL, TEXT("ERROR #3"), NULL, MB_ICONERROR);
         UnmapViewOfFile(pView);
         CloseHandle(s_hMapping);
         s_hMapping = NULL;
         return FALSE;
     }
+
+    FlushViewOfFile(pNew, sizeof(*pNew));
+    UnmapViewOfFile(pNew);
 
     return TRUE;
 }

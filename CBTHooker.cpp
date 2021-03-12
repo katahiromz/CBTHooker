@@ -3,6 +3,7 @@
 #include <commctrl.h>
 #include <tchar.h>
 #include <cstring>
+#include <strsafe.h>
 #include "CBTHooker.h"
 #include "resource.h"
 
@@ -29,6 +30,15 @@ LPTSTR LoadStringDx(INT nID)
     pszBuff[0] = 0;
     ::LoadString(NULL, nID, pszBuff, cchBuffMax);
     return pszBuff;
+}
+
+void DoAddText(HWND hwnd, LPCTSTR pszText)
+{
+    HWND hwndEdit = GetDlgItem(hwnd, edt1);
+    INT cch = GetWindowTextLength(hwndEdit);
+    SendMessage(hwndEdit, EM_SETSEL, cch, cch);
+    SendMessage(hwndEdit, EM_REPLACESEL, FALSE, (LPARAM)pszText);
+    SendMessage(hwndEdit, EM_SCROLLCARET, 0, 0);
 }
 
 BOOL OnInitDialog(HWND hwnd, HWND hwndFocus, LPARAM lParam)
@@ -82,6 +92,11 @@ void DoEnableControls(HWND hwnd, BOOL bEnable)
 {
     if (bEnable)
     {
+        EnableWindow(GetDlgItem(hwnd, chx1), TRUE);
+        EnableWindow(GetDlgItem(hwnd, chx2), TRUE);
+        EnableWindow(GetDlgItem(hwnd, chx3), TRUE);
+        EnableWindow(GetDlgItem(hwnd, chx4), TRUE);
+        EnableWindow(GetDlgItem(hwnd, chx5), TRUE);
         EnableWindow(GetDlgItem(hwnd, cmb1), TRUE);
         EnableWindow(GetDlgItem(hwnd, cmb2), TRUE);
         EnableWindow(GetDlgItem(hwnd, cmb3), TRUE);
@@ -92,6 +107,11 @@ void DoEnableControls(HWND hwnd, BOOL bEnable)
     }
     else
     {
+        EnableWindow(GetDlgItem(hwnd, chx1), FALSE);
+        EnableWindow(GetDlgItem(hwnd, chx2), FALSE);
+        EnableWindow(GetDlgItem(hwnd, chx3), FALSE);
+        EnableWindow(GetDlgItem(hwnd, chx4), FALSE);
+        EnableWindow(GetDlgItem(hwnd, chx5), FALSE);
         EnableWindow(GetDlgItem(hwnd, cmb1), FALSE);
         EnableWindow(GetDlgItem(hwnd, cmb2), FALSE);
         EnableWindow(GetDlgItem(hwnd, cmb3), FALSE);
@@ -100,6 +120,34 @@ void DoEnableControls(HWND hwnd, BOOL bEnable)
         //EnableWindow(GetDlgItem(hwnd, cmb6), FALSE);
         SetDlgItemText(hwnd, IDOK, LoadStringDx(IDS_ENDWATCH));
     }
+}
+
+static void DoShowData(HWND hwnd, CBTDATA *pData)
+{
+    TCHAR szText[MAX_PATH * 2];
+    StringCbPrintf(szText, sizeof(szText),
+        TEXT("DoShowData(")
+        TEXT("hwndNotify:%p, ")
+        TEXT("nCode:%d, ")
+        TEXT("iAction:%d, ")
+        TEXT("hHook:%p, ")
+        TEXT("has_cls:%d, has_txt:%d, has_pid:%d, has_tid:%d, ")
+        TEXT("cls:'%s', ")
+        TEXT("txt:'%s', ")
+        TEXT("pid:%lu (0x%lX), ")
+        TEXT("tid:%lu (0x%lX), ")
+        TEXT("hwndFound:%p)\r\n"),
+        pData->hwndNotify,
+        pData->nCode,
+        pData->iAction,
+        pData->hHook,
+        pData->has_cls, pData->has_txt, pData->has_pid, pData->has_tid,
+        pData->cls,
+        pData->txt,
+        pData->pid, pData->pid, 
+        pData->tid, pData->tid, 
+        pData->hwndFound);
+    DoAddText(hwnd, szText);
 }
 
 void OnOK(HWND hwnd)
@@ -127,9 +175,19 @@ void OnOK(HWND hwnd)
         data.has_pid = (IsDlgButtonChecked(hwnd, chx3) == BST_CHECKED);
         data.has_tid = (IsDlgButtonChecked(hwnd, chx4) == BST_CHECKED);
 
-        TCHAR szText[64];
-        GetDlgItemText(hwnd, cmb2, data.cls, _countof(data.cls));
-        GetDlgItemText(hwnd, cmb3, data.txt, _countof(data.txt));
+        TCHAR szText[MAX_PATH];
+
+        i = (INT)SendDlgItemMessage(hwnd, cmb2, CB_GETCURSEL, 0, 0);
+        if (i == CB_ERR)
+            GetDlgItemText(hwnd, cmb2, data.cls, _countof(data.cls));
+        else
+            SendDlgItemMessage(hwnd, cmb2, CB_GETLBTEXT, i, (LPARAM)data.cls);
+
+        i = (INT)SendDlgItemMessage(hwnd, cmb3, CB_GETCURSEL, 0, 0);
+        if (i == CB_ERR)
+            GetDlgItemText(hwnd, cmb3, data.txt, _countof(data.txt));
+        else
+            SendDlgItemMessage(hwnd, cmb3, CB_GETLBTEXT, i, (LPARAM)data.txt);
 
         GetDlgItemText(hwnd, cmb4, szText, _countof(szText));
         if (szText[0])
@@ -158,7 +216,10 @@ void OnOK(HWND hwnd)
         if (IsDlgButtonChecked(hwnd, chx5) != BST_CHECKED)
             data.iAction = AT_NOTHING;
 
+        data.hwndNotify = hwnd;
         data.hwndFound = NULL;
+
+        DoShowData(hwnd, &data);
 
         if (DoStartWatch(&data))
         {
@@ -168,6 +229,7 @@ void OnOK(HWND hwnd)
     }
     else
     {
+        DoAddText(hwnd, TEXT("DoEndWatch()\r\n"));
         if (DoEndWatch())
         {
             s_bWatching = FALSE;
@@ -305,6 +367,53 @@ void OnCommand(HWND hwnd, int id, HWND hwndCtl, UINT codeNotify)
     }
 }
 
+static void OnUser100(HWND hwndNotify, HWND hwnd, INT nCode)
+{
+    TCHAR szText[MAX_PATH * 3];
+    DWORD tid, pid;
+    TCHAR cls[MAX_PATH], txt[MAX_PATH];
+
+    tid = GetWindowThreadProcessId(hwnd, &pid);
+    GetClassName(hwnd, cls, MAX_PATH);
+    GetWindowText(hwnd, txt, MAX_PATH);
+
+    switch (nCode)
+    {
+    case HCBT_ACTIVATE:
+        StringCbPrintf(szText, sizeof(szText),
+            TEXT("HCBT_ACTIVATE(hwnd:%p, pid:%lu (0x%lX), tid:%lu (0x%lX), cls:'%s', txt:'%s')\r\n"),
+            hwnd, pid, pid, tid, tid, cls, txt);
+        break;
+    case HCBT_CREATEWND:
+        StringCbPrintf(szText, sizeof(szText),
+            TEXT("HCBT_CREATEWND(hwnd:%p, pid:%lu (0x%lX), tid:%lu (0x%lX), cls:'%s', txt:'%s')\r\n"),
+            hwnd, pid, pid, tid, tid, cls, txt);
+        break;
+    case HCBT_DESTROYWND:
+        StringCbPrintf(szText, sizeof(szText),
+            TEXT("HCBT_DESTROYWND(hwnd:%p, pid:%lu (0x%lX), tid:%lu (0x%lX), cls:'%s', txt:'%s')\r\n"),
+            hwnd, pid, pid, tid, tid, cls, txt);
+        break;
+    case HCBT_MINMAX:
+        StringCbPrintf(szText, sizeof(szText),
+            TEXT("HCBT_MINMAX(hwnd:%p, pid:%lu (0x%lX), tid:%lu (0x%lX), cls:'%s', txt:'%s')\r\n"),
+            hwnd, pid, pid, tid, tid, cls, txt);
+        break;
+    case HCBT_MOVESIZE:
+        StringCbPrintf(szText, sizeof(szText),
+            TEXT("HCBT_MOVESIZE(hwnd:%p, pid:%lu (0x%lX), tid:%lu (0x%lX), cls:'%s', txt:'%s')\r\n"),
+            hwnd, pid, pid, tid, tid, cls, txt);
+        break;
+    case HCBT_SETFOCUS:
+        StringCbPrintf(szText, sizeof(szText),
+            TEXT("HCBT_SETFOCUS(hwnd:%p, pid:%lu (0x%lX), tid:%lu (0x%lX), cls:'%s', txt:'%s')\r\n"),
+            hwnd, pid, pid, tid, tid, cls, txt);
+        break;
+    }
+
+    DoAddText(hwnd, szText);
+}
+
 INT_PTR CALLBACK
 DialogProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
@@ -312,6 +421,9 @@ DialogProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
     {
         HANDLE_MSG(hwnd, WM_INITDIALOG, OnInitDialog);
         HANDLE_MSG(hwnd, WM_COMMAND, OnCommand);
+    case WM_USER + 100:
+        OnUser100(hwnd, reinterpret_cast<HWND>(wParam), LOWORD(lParam));
+        break;
     }
     return 0;
 }

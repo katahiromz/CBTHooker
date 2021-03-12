@@ -26,6 +26,7 @@ typedef enum ACTION_TYPE
 
 typedef struct CBTDATA
 {
+    HWND hwndNotify;
     INT nCode;
     ACTION_TYPE iAction;
     HHOOK hHook;
