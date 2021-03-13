@@ -13,9 +13,11 @@
 #define WC_WATCHER32  TEXT("CBT Hooker Watcher 32")
 #define WC_WATCHER64  TEXT("CBT Hooker Watcher 64")
 
-#define WATCH_START  (WM_USER + 100)
-#define WATCH_END (WM_USER + 101)
-#define WATCH_ACTION (WM_USER + 102)
+#define WATCH_START  (WM_APP + 100)
+#define WATCH_END (WM_APP + 101)
+#define WATCH_ACTION (WM_APP + 102)
+
+#define WM_MYNOTIFY  (WM_APP + 200)
 
 typedef enum ACTION_TYPE
 {

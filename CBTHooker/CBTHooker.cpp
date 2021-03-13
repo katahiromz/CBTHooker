@@ -299,95 +299,101 @@ BOOL DoEndWatcher(VOID)
     return TRUE;
 }
 
+BOOL DoPrepareData(HWND hwnd, CBTDATA& data)
+{
+    ZeroMemory(&data, sizeof(data));
+
+    INT i = ::SendDlgItemMessage(hwnd, cmb1, CB_GETCURSEL, 0, 0);
+    switch (i)
+    {
+    case 0: data.nCode = HCBT_ACTIVATE; break;
+    case 1: data.nCode = HCBT_CREATEWND; break;
+    case 2: data.nCode = HCBT_DESTROYWND; break;
+    case 3: data.nCode = HCBT_MINMAX; break;
+    case 4: data.nCode = HCBT_SETFOCUS; break;
+    default:
+        MessageBox(hwnd, TEXT("Please choose CBT type."), NULL, MB_ICONERROR);
+        return FALSE;
+    }
+
+    data.has_cls = (IsDlgButtonChecked(hwnd, chx1) == BST_CHECKED);
+    data.has_txt = (IsDlgButtonChecked(hwnd, chx2) == BST_CHECKED);
+    data.has_pid = (IsDlgButtonChecked(hwnd, chx3) == BST_CHECKED);
+    data.has_tid = (IsDlgButtonChecked(hwnd, chx4) == BST_CHECKED);
+
+    TCHAR szText[MAX_PATH];
+
+    i = (INT)SendDlgItemMessage(hwnd, cmb2, CB_GETCURSEL, 0, 0);
+    if (i == CB_ERR)
+        GetDlgItemText(hwnd, cmb2, data.cls, _countof(data.cls));
+    else
+        SendDlgItemMessage(hwnd, cmb2, CB_GETLBTEXT, i, (LPARAM)data.cls);
+
+    i = (INT)SendDlgItemMessage(hwnd, cmb3, CB_GETCURSEL, 0, 0);
+    if (i == CB_ERR)
+        GetDlgItemText(hwnd, cmb3, data.txt, _countof(data.txt));
+    else
+        SendDlgItemMessage(hwnd, cmb3, CB_GETLBTEXT, i, (LPARAM)data.txt);
+
+    GetDlgItemText(hwnd, cmb4, szText, _countof(szText));
+    if (szText[0])
+    {
+        data.pid = _tcstoul(szText, NULL, 0);
+    }
+    else
+    {
+        data.has_pid = FALSE;
+        data.pid = 0;
+    }
+
+    GetDlgItemText(hwnd, cmb5, szText, _countof(szText));
+    if (szText[0])
+    {
+        data.tid = _tcstoul(szText, NULL, 0);
+    }
+    else
+    {
+        data.has_tid = FALSE;
+        data.tid = 0;
+    }
+
+    i = SendDlgItemMessage(hwnd, cmb6, CB_GETCURSEL, 0, 0);
+    data.iAction = static_cast<ACTION_TYPE>(i);
+    if (IsDlgButtonChecked(hwnd, chx5) != BST_CHECKED)
+        data.iAction = AT_NOTHING;
+
+    data.has_self = TRUE;
+    data.self_pid = GetCurrentProcessId();
+    data.hwndNotify = hwnd;
+    data.hwndFound = NULL;
+
+    if (!data.has_cls && !data.has_txt &&
+        !data.has_pid && !data.has_tid)
+    {
+        MessageBox(hwnd, LoadStringDx(IDS_TOOVAGUE), NULL, MB_ICONERROR);
+        return FALSE;
+    }
+
+    return TRUE;
+}
+
 void OnOK(HWND hwnd)
 {
     if (!s_bWatching)
     {
         CBTDATA data;
-        ZeroMemory(&data, sizeof(data));
-
-        INT i = ::SendDlgItemMessage(hwnd, cmb1, CB_GETCURSEL, 0, 0);
-        switch (i)
+        if (DoPrepareData(hwnd, data) && DoStartWatcher(hwnd, &data))
         {
-        case 0: data.nCode = HCBT_ACTIVATE; break;
-        case 1: data.nCode = HCBT_CREATEWND; break;
-        case 2: data.nCode = HCBT_DESTROYWND; break;
-        case 3: data.nCode = HCBT_MINMAX; break;
-        case 4: data.nCode = HCBT_SETFOCUS; break;
-        default:
-            MessageBox(hwnd, TEXT("Please choose CBT type."), NULL, MB_ICONERROR);
-            return;
-        }
-
-        data.has_cls = (IsDlgButtonChecked(hwnd, chx1) == BST_CHECKED);
-        data.has_txt = (IsDlgButtonChecked(hwnd, chx2) == BST_CHECKED);
-        data.has_pid = (IsDlgButtonChecked(hwnd, chx3) == BST_CHECKED);
-        data.has_tid = (IsDlgButtonChecked(hwnd, chx4) == BST_CHECKED);
-
-        TCHAR szText[MAX_PATH];
-
-        i = (INT)SendDlgItemMessage(hwnd, cmb2, CB_GETCURSEL, 0, 0);
-        if (i == CB_ERR)
-            GetDlgItemText(hwnd, cmb2, data.cls, _countof(data.cls));
-        else
-            SendDlgItemMessage(hwnd, cmb2, CB_GETLBTEXT, i, (LPARAM)data.cls);
-
-        i = (INT)SendDlgItemMessage(hwnd, cmb3, CB_GETCURSEL, 0, 0);
-        if (i == CB_ERR)
-            GetDlgItemText(hwnd, cmb3, data.txt, _countof(data.txt));
-        else
-            SendDlgItemMessage(hwnd, cmb3, CB_GETLBTEXT, i, (LPARAM)data.txt);
-
-        GetDlgItemText(hwnd, cmb4, szText, _countof(szText));
-        if (szText[0])
-        {
-            data.pid = _tcstoul(szText, NULL, 0);
-        }
-        else
-        {
-            data.has_pid = FALSE;
-            data.pid = 0;
-        }
-
-        GetDlgItemText(hwnd, cmb5, szText, _countof(szText));
-        if (szText[0])
-        {
-            data.tid = _tcstoul(szText, NULL, 0);
-        }
-        else
-        {
-            data.has_tid = FALSE;
-            data.tid = 0;
-        }
-
-        i = SendDlgItemMessage(hwnd, cmb6, CB_GETCURSEL, 0, 0);
-        data.iAction = static_cast<ACTION_TYPE>(i);
-        if (IsDlgButtonChecked(hwnd, chx5) != BST_CHECKED)
-            data.iAction = AT_NOTHING;
-
-        data.has_self = TRUE;
-        data.self_pid = GetCurrentProcessId();
-        data.hwndNotify = hwnd;
-        data.hwndFound = NULL;
-
-        if (!data.has_cls && !data.has_txt &&
-            !data.has_pid && !data.has_tid)
-        {
-            MessageBox(hwnd, LoadStringDx(IDS_TOOVAGUE), NULL, MB_ICONERROR);
-            return;
-        }
-
-        if (DoStartWatcher(hwnd, &data))
-        {
+            DoAddText(hwnd, TEXT("DoStartWatcher()\r\n"));
             s_bWatching = TRUE;
             DoEnableControls(hwnd, FALSE);
         }
     }
     else
     {
-        DoAddText(hwnd, TEXT("DoEndWatcher()\r\n"));
         if (DoEndWatcher())
         {
+            DoAddText(hwnd, TEXT("DoEndWatcher()\r\n"));
             s_bWatching = FALSE;
             DoEnableControls(hwnd, TRUE);
         }
@@ -396,9 +402,9 @@ void OnOK(HWND hwnd)
 
 void OnCancel(HWND hwnd)
 {
-    DoAddText(hwnd, TEXT("DoEndWatcher()\r\n"));
     if (DoEndWatcher())
     {
+        DoAddText(hwnd, TEXT("DoEndWatcher()\r\n"));
         s_bWatching = FALSE;
         DoEnableControls(hwnd, TRUE);
     }
@@ -523,7 +529,8 @@ void OnCommand(HWND hwnd, int id, HWND hwndCtl, UINT codeNotify)
     }
 }
 
-static void OnUser100(HWND hwndNotify, HWND hwnd, INT nCode)
+static void
+OnMyNotify(HWND hwndNotify, HWND hwnd, INT nCode, BOOL fRestart)
 {
     TCHAR szText[MAX_PATH * 3];
     DWORD tid, pid;
@@ -570,6 +577,23 @@ static void OnUser100(HWND hwndNotify, HWND hwnd, INT nCode)
     }
 
     DoAddText(hwndNotify, szText);
+
+    if (fRestart)
+    {
+        if (DoEndWatcher())
+        {
+            DoAddText(hwnd, TEXT("DoEndWatcher()\r\n"));
+            s_bWatching = FALSE;
+            DoEnableControls(hwnd, TRUE);
+        }
+        CBTDATA data;
+        if (DoPrepareData(hwnd, data) && DoStartWatcher(hwnd, &data))
+        {
+            DoAddText(hwnd, TEXT("DoStartWatcher()\r\n"));
+            s_bWatching = TRUE;
+            DoEnableControls(hwnd, FALSE);
+        }
+    }
 }
 
 INT_PTR CALLBACK
@@ -579,8 +603,8 @@ DialogProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
     {
         HANDLE_MSG(hwnd, WM_INITDIALOG, OnInitDialog);
         HANDLE_MSG(hwnd, WM_COMMAND, OnCommand);
-    case (WM_USER + 100):
-        OnUser100(hwnd, reinterpret_cast<HWND>(wParam), LOWORD(lParam));
+    case WM_MYNOTIFY:
+        OnMyNotify(hwnd, reinterpret_cast<HWND>(wParam), LOWORD(lParam), HIWORD(lParam));
         break;
     }
     return 0;

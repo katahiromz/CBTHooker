@@ -47,6 +47,30 @@ static void DoUnMap(CBTMAP *pMap)
     }
 }
 
+static BOOL EnableProcessPriviledge(LPCTSTR pszSE_)
+{
+    BOOL f;
+    HANDLE hProcess;
+    HANDLE hToken;
+    LUID luid;
+    TOKEN_PRIVILEGES tp;
+    
+    f = FALSE;
+    hProcess = GetCurrentProcess();
+    if (OpenProcessToken(hProcess, TOKEN_ADJUST_PRIVILEGES, &hToken))
+    {
+        if (LookupPrivilegeValue(NULL, pszSE_, &luid))
+        {
+            tp.PrivilegeCount = 1;
+            tp.Privileges[0].Attributes = SE_PRIVILEGE_ENABLED;
+            tp.Privileges[0].Luid = luid;
+            f = AdjustTokenPrivileges(hToken, FALSE, &tp, 0, NULL, NULL);
+        }
+        CloseHandle(hToken);
+    }
+    return f;
+}
+
 static BOOL DoSuspendProcess(CBTDATA *pData, DWORD pid, BOOL bSuspend)
 {
     if (pData->self_pid == pid || pData->dwMyPID == pid)
@@ -59,6 +83,8 @@ static BOOL DoSuspendProcess(CBTDATA *pData, DWORD pid, BOOL bSuspend)
     if (pData->is_64bit)
         return FALSE;
 #endif
+
+    EnableProcessPriviledge(SE_DEBUG_NAME);
 
     HANDLE hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, 0);
     if (hSnapshot == INVALID_HANDLE_VALUE)
@@ -194,9 +220,10 @@ DoTarget(HWND hwnd, CBTDATA *pData, INT nCode)
     if (DoesMatch(hwnd, pData))
     {
         pData->hwndFound = hwnd;
-        PostMessage(pData->hwndNotify, (WM_USER + 100),
-                    reinterpret_cast<WPARAM>(hwnd), WORD(nCode));
         DoAction(hwnd, pData->iAction, pData);
+        PostMessage(pData->hwndNotify, WM_MYNOTIFY,
+                    reinterpret_cast<WPARAM>(hwnd),
+                    MAKELPARAM(nCode, TRUE));
     }
 }
 
