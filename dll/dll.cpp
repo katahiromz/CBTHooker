@@ -1,7 +1,9 @@
-#include "CBTHooker.h"
+#include "../CBTHooker.h"
 #include <tlhelp32.h>
-#include <shlwapi.h>
+#include <tchar.h>
+#include <strsafe.h>
 #include <cassert>
+#include <cstring>
 
 #define SHARE_NAME TEXT("CBT Hooker Share")
 
@@ -45,8 +47,16 @@ static void DoUnMap(CBTMAP *pMap)
     }
 }
 
-CBTHOOKAPI BOOL APIENTRY DoSuspendProcess(DWORD pid, BOOL bSuspend)
+static BOOL DoSuspendProcess(CBTDATA *pData, DWORD pid, BOOL bSuspend)
 {
+#ifdef _WIN64
+    if (!pData->is_64bit)
+        return FALSE;
+#else
+    if (pData->is_64bit)
+        return FALSE;
+#endif
+
     HANDLE hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, 0);
     if (hSnapshot == INVALID_HANDLE_VALUE)
         return FALSE;
@@ -77,49 +87,57 @@ CBTHOOKAPI BOOL APIENTRY DoSuspendProcess(DWORD pid, BOOL bSuspend)
     return bSuccess;
 }
 
-CBTHOOKAPI BOOL APIENTRY DoSuspendWindow(HWND hwnd, BOOL bSuspend)
+static BOOL DoSuspendWindow(CBTDATA *pData, HWND hwnd, BOOL bSuspend)
 {
     DWORD pid = 0;
     GetWindowThreadProcessId(hwnd, &pid);
+
     if (bSuspend)
-        return DoSuspendProcess(pid, TRUE);
+        return DoSuspendProcess(pData, pid, TRUE);
     else
-        return DoSuspendProcess(pid, FALSE);
+        return DoSuspendProcess(pData, pid, FALSE);
 }
 
 CBTHOOKAPI VOID APIENTRY DoAction(HWND hwnd, ACTION_TYPE iAction)
 {
-    switch (iAction)
+    if (CBTMAP *pMap = DoMap())
     {
-    case AT_NOTHING: // Do nothing
-        break;
-    case AT_SUSPEND: // Suspend
-        DoSuspendWindow(hwnd, TRUE);
-        break;
-    case AT_RESUME: // Resume
-        DoSuspendWindow(hwnd, FALSE);
-        break;
-    case AT_MAXIMIZE: // Maximize
-        ShowWindowAsync(hwnd, SW_MAXIMIZE);
-        break;
-    case AT_MINIMIZE: // Minimize
-        ShowWindowAsync(hwnd, SW_MINIMIZE);
-        break;
-    case AT_RESTORE: // Restore
-        ShowWindowAsync(hwnd, SW_RESTORE);
-        break;
-    case AT_SHOW: // Show
-        ShowWindowAsync(hwnd, SW_SHOWNORMAL);
-        break;
-    case AT_HIDE: // Hide
-        ShowWindowAsync(hwnd, SW_HIDE);
-        break;
-    case AT_CLOSE: // Close
-        PostMessage(hwnd, WM_CLOSE, 0, 0);
-        break;
-    case AT_DESTROY: // Destroy
-        DestroyWindow(hwnd);
-        break;
+        CBTDATA *pData = pMap->pData;
+
+        switch (iAction)
+        {
+        case AT_NOTHING: // Do nothing
+            break;
+        case AT_SUSPEND: // Suspend
+            DoSuspendWindow(pData, hwnd, TRUE);
+            break;
+        case AT_RESUME: // Resume
+            DoSuspendWindow(pData, hwnd, FALSE);
+            break;
+        case AT_MAXIMIZE: // Maximize
+            ShowWindowAsync(hwnd, SW_MAXIMIZE);
+            break;
+        case AT_MINIMIZE: // Minimize
+            ShowWindowAsync(hwnd, SW_MINIMIZE);
+            break;
+        case AT_RESTORE: // Restore
+            ShowWindowAsync(hwnd, SW_RESTORE);
+            break;
+        case AT_SHOW: // Show
+            ShowWindowAsync(hwnd, SW_SHOWNORMAL);
+            break;
+        case AT_HIDE: // Hide
+            ShowWindowAsync(hwnd, SW_HIDE);
+            break;
+        case AT_CLOSE: // Close
+            PostMessage(hwnd, WM_CLOSE, 0, 0);
+            break;
+        case AT_DESTROY: // Destroy
+            DestroyWindow(hwnd);
+            break;
+        }
+
+        DoUnMap(pMap);
     }
 }
 
@@ -137,7 +155,13 @@ static BOOL DoesMatch(HWND hwnd, CBTDATA *pData)
     if (bMatched && pData->has_txt)
     {
         GetWindowText(hwnd, szText, _countof(szText));
-        if (StrStrI(szText, pData->txt) != 0)
+        CharUpper(szText);
+
+        WCHAR szText2[MAX_PATH];
+        StringCbCopy(szText2, sizeof(szText2), pData->txt);
+        CharUpper(szText2);
+
+        if (_tcsstr(szText, szText2) != 0)
             bMatched = FALSE;
     }
     if (bMatched && pData->has_pid)

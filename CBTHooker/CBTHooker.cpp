@@ -3,8 +3,10 @@
 #include <commctrl.h>
 #include <tchar.h>
 #include <cstring>
+#include <string>
+#include <shlwapi.h>
 #include <strsafe.h>
-#include "CBTHooker.h"
+#include "../CBTHooker.h"
 #include "resource.h"
 
 #define TIMER_ID 0xFEEDBEEF
@@ -122,32 +124,141 @@ void DoEnableControls(HWND hwnd, BOOL bEnable)
     }
 }
 
-static void DoShowData(HWND hwnd, CBTDATA *pData)
+static LPCTSTR DoGetParams(HWND hwnd, CBTDATA *pData)
 {
-    TCHAR szText[MAX_PATH * 2];
-    StringCbPrintf(szText, sizeof(szText),
-        TEXT("DoShowData(")
-        TEXT("hwndNotify:%p, ")
-        TEXT("nCode:%d, ")
-        TEXT("iAction:%d, ")
-        TEXT("hHook:%p, ")
-        TEXT("has_cls:%d, has_txt:%d, has_pid:%d, has_tid:%d, ")
-        TEXT("cls:'%s', ")
-        TEXT("txt:'%s', ")
-        TEXT("pid:%lu (0x%lX), ")
-        TEXT("tid:%lu (0x%lX), ")
-        TEXT("hwndFound:%p)\r\n"),
-        pData->hwndNotify,
+    TCHAR sz1[MAX_PATH], sz2[MAX_PATH];
+    TCHAR sz3[32], sz4[32], sz5[32];
+    static TCHAR s_szText[MAX_PATH * 3];
+
+    if (pData->has_cls)
+        StringCbPrintf(sz1, sizeof(sz1), TEXT("/cls \"%s\""), pData->cls);
+    else
+        sz1[0] = 0;
+
+    if (pData->has_txt)
+        StringCbPrintf(sz2, sizeof(sz2), TEXT("/txt \"%s\""), pData->txt);
+    else
+        sz2[0] = 0;
+
+    if (pData->has_pid)
+        StringCbPrintf(sz3, sizeof(sz3), TEXT("/pid %u"), pData->pid);
+    else
+        sz3[0] = 0;
+
+    if (pData->has_tid)
+        StringCbPrintf(sz4, sizeof(sz4), TEXT("/tid %u"), pData->tid);
+    else
+        sz4[0] = 0;
+
+    if (pData->has_self)
+        StringCbPrintf(sz5, sizeof(sz5), TEXT("/self %u"), pData->self_pid);
+    else
+        sz5[0] = 0;
+
+    StringCbPrintf(s_szText, sizeof(s_szText),
+        TEXT("/notity %u /code %d /action %u /self %u ")
+        TEXT("%s %s %s %s %s"),
+        (ULONG)(ULONG_PTR)pData->hwndNotify,
         pData->nCode,
         pData->iAction,
-        pData->hHook,
-        pData->has_cls, pData->has_txt, pData->has_pid, pData->has_tid,
-        pData->cls,
-        pData->txt,
-        pData->pid, pData->pid, 
-        pData->tid, pData->tid, 
-        pData->hwndFound);
-    DoAddText(hwnd, szText);
+        sz1, sz2, sz3, sz4, sz5);
+    return s_szText;
+}
+
+BOOL IsWow64(HANDLE hProcess)
+{
+    typedef BOOL (WINAPI *FN_IsWow64Process)(HANDLE, LPBOOL);
+    HMODULE hKernel32 = GetModuleHandleA("kernel32");
+    FN_IsWow64Process pIsWow64Process =
+        (FN_IsWow64Process)GetProcAddress(hKernel32, "IsWow64Process");
+    if (!pIsWow64Process)
+        return FALSE;
+
+    BOOL bWow64;
+    if ((*pIsWow64Process)(hProcess, &bWow64))
+        return bWow64;
+    return FALSE;
+}
+
+BOOL DoStartWatcher(HWND hwnd, CBTDATA *pData)
+{
+    TCHAR szPath[MAX_PATH];
+    GetModuleFileName(NULL, szPath, _countof(szPath));
+    PathRemoveFileSpec(szPath);
+    PathAppend(szPath, TEXT("watcher32.exe"));
+
+    LPCTSTR pszParams = DoGetParams(hwnd, pData);
+    INT ret1 = (INT)(ULONG_PTR)ShellExecute(hwnd, NULL, szPath, pszParams, NULL, SW_HIDE);
+    if (ret1 > 32)
+    {
+        HWND hwndWatcher;
+        for (;;)
+        {
+            hwndWatcher = FindWindow(WC_WATCHER32, NULL);
+            if (hwndWatcher)
+                break;
+            Sleep(100);
+        }
+        PostMessage(hwndWatcher, WATCH_START, 0, 0);
+    }
+    else
+    {
+        MessageBox(hwnd, TEXT("ERROR #1"), NULL, MB_ICONERROR);
+        return FALSE;
+    }
+
+    BOOL b64BitSupport = IsWow64(GetCurrentProcess());
+    if (!b64BitSupport)
+        return TRUE;
+
+    PathRemoveFileSpec(szPath);
+    PathAppend(szPath, TEXT("watcher64.exe"));
+    INT ret2 = (INT)(ULONG_PTR)ShellExecute(hwnd, NULL, szPath, pszParams, NULL, SW_HIDE);
+    if (ret2 > 32)
+    {
+        HWND hwndWatcher;
+        for (;;)
+        {
+            hwndWatcher = FindWindow(WC_WATCHER64, NULL);
+            if (hwndWatcher)
+                break;
+            Sleep(100);
+        }
+        PostMessage(hwndWatcher, WATCH_START, 0, 0);
+    }
+    else
+    {
+        MessageBox(hwnd, TEXT("ERROR #2"), NULL, MB_ICONERROR);
+        return FALSE;
+    }
+
+    return TRUE;
+}
+
+BOOL DoWatcherAction(HWND hwnd, INT iAction)
+{
+    if (HWND hwndWatcher = FindWindow(WC_WATCHER32, NULL))
+    {
+        PostMessage(hwndWatcher, WATCH_ACTION, iAction, 0);
+    }
+    if (HWND hwndWatcher = FindWindow(WC_WATCHER64, NULL))
+    {
+        PostMessage(hwndWatcher, WATCH_ACTION, iAction, 0);
+    }
+    return TRUE;
+}
+
+BOOL DoEndWatcher(VOID)
+{
+    if (HWND hwndWatcher = FindWindow(WC_WATCHER32, NULL))
+    {
+        PostMessage(hwndWatcher, WATCH_END, 0, 0);
+    }
+    if (HWND hwndWatcher = FindWindow(WC_WATCHER64, NULL))
+    {
+        PostMessage(hwndWatcher, WATCH_END, 0, 0);
+    }
+    return TRUE;
 }
 
 void OnOK(HWND hwnd)
@@ -216,21 +327,17 @@ void OnOK(HWND hwnd)
         if (IsDlgButtonChecked(hwnd, chx5) != BST_CHECKED)
             data.iAction = AT_NOTHING;
 
+        data.has_self = TRUE;
+        data.self_pid = GetCurrentProcessId();
         data.hwndNotify = hwnd;
         data.hwndFound = NULL;
 
-        DoShowData(hwnd, &data);
-
-        if (DoStartWatch(&data))
-        {
-            s_bWatching = TRUE;
-            DoEnableControls(hwnd, FALSE);
-        }
+        DoStartWatcher(hwnd, &data);
     }
     else
     {
-        DoAddText(hwnd, TEXT("DoEndWatch()\r\n"));
-        if (DoEndWatch())
+        DoAddText(hwnd, TEXT("DoEndWatcher()\r\n"));
+        if (DoEndWatcher())
         {
             s_bWatching = FALSE;
             DoEnableControls(hwnd, TRUE);
@@ -240,7 +347,8 @@ void OnOK(HWND hwnd)
 
 void OnCancel(HWND hwnd)
 {
-    if (DoEndWatch())
+    DoAddText(hwnd, TEXT("DoEndWatcher()\r\n"));
+    if (DoEndWatcher())
     {
         s_bWatching = FALSE;
         DoEnableControls(hwnd, TRUE);
@@ -251,8 +359,7 @@ void OnCancel(HWND hwnd)
 void OnPsh1(HWND hwnd)
 {
     INT iAction = SendDlgItemMessage(hwnd, cmb6, CB_GETCURSEL, 0, 0);
-    HWND hwndTarget = DoGetTargetWindow();
-    DoAction(hwndTarget, static_cast<ACTION_TYPE>(iAction));
+    DoWatcherAction(hwnd, iAction);
 }
 
 void OnCommand(HWND hwnd, int id, HWND hwndCtl, UINT codeNotify)

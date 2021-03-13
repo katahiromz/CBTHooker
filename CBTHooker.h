@@ -10,6 +10,13 @@
     #define CBTHOOKAPI  EXTERN_C __declspec(dllimport)
 #endif
 
+#define WC_WATCHER32  TEXT("CBT Hooker Watcher 32")
+#define WC_WATCHER64  TEXT("CBT Hooker Watcher 64")
+
+#define WATCH_START  (WM_USER + 100)
+#define WATCH_END (WM_USER + 101)
+#define WATCH_ACTION (WM_USER + 102)
+
 typedef enum ACTION_TYPE
 {
     AT_NOTHING,
@@ -34,10 +41,13 @@ typedef struct CBTDATA
     BOOL has_txt;
     BOOL has_pid;
     BOOL has_tid;
+    BOOL has_self;
     TCHAR cls[MAX_PATH];
     TCHAR txt[MAX_PATH];
     DWORD pid;
     DWORD tid;
+    DWORD self_pid;
+    BOOL is_64bit;
     HWND hwndFound;
 } CBTDATA;
 
@@ -49,7 +59,5 @@ typedef struct CBTMAP
 
 CBTHOOKAPI BOOL APIENTRY DoStartWatch(const CBTDATA *pData);
 CBTHOOKAPI BOOL APIENTRY DoEndWatch(VOID);
-CBTHOOKAPI BOOL APIENTRY DoSuspendProcess(DWORD pid, BOOL bSuspend);
-CBTHOOKAPI BOOL APIENTRY DoSuspendWindow(HWND hwnd, BOOL bSuspend);
 CBTHOOKAPI VOID APIENTRY DoAction(HWND hwnd, ACTION_TYPE iAction);
 CBTHOOKAPI HWND APIENTRY DoGetTargetWindow(VOID);

@@ -38,23 +38,28 @@ endif()
 # Unicode support
 add_definitions(-DUNICODE -D_UNICODE)
 
-# dll.dll
-add_library(dll SHARED dll.cpp dll.def)
-target_link_libraries(dll PRIVATE shlwapi)
+# dll32.dll and dll64.dll
+add_library(dll SHARED dll/dll.cpp dll/dll.def)
+target_link_libraries(dll PRIVATE)
 set_target_properties(dll PROPERTIES PREFIX "")
 target_compile_definitions(dll PRIVATE -DCBTHOOK_DLL)
 
-# CBTHooker.exe
-add_executable(CBTHooker WIN32 CBTHooker.cpp CBTHooker_res.rc)
-target_link_libraries(CBTHooker PRIVATE comctl32 dll)
+# watcher32.exe and watcher64.exe
+add_executable(watcher WIN32 watcher/watcher.cpp)
+target_link_libraries(watcher PRIVATE dll)
+target_compile_definitions(watcher PRIVATE)
 
 # 32-bit or 64-bit?
 if(CMAKE_SIZEOF_VOID_P EQUAL 8)
     set_target_properties(dll PROPERTIES OUTPUT_NAME "dll64")
-    set_target_properties(CBTHooker PROPERTIES OUTPUT_NAME "CBTHooker64")
+    set_target_properties(watcher PROPERTIES OUTPUT_NAME "watcher64")
 elseif(CMAKE_SIZEOF_VOID_P EQUAL 4)
     set_target_properties(dll PROPERTIES OUTPUT_NAME "dll32")
-    set_target_properties(CBTHooker PROPERTIES OUTPUT_NAME "CBTHooker32")
+    set_target_properties(watcher PROPERTIES OUTPUT_NAME "watcher32")
+
+    # CBTHooker.exe
+    add_executable(CBTHooker WIN32 CBTHooker/CBTHooker.cpp CBTHooker/CBTHooker_res.rc)
+    target_link_libraries(CBTHooker PRIVATE comctl32 shlwapi)
 else()
     message(FATAL_ERROR "You lose.")
 endif()
