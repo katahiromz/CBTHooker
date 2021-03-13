@@ -1,9 +1,11 @@
 #include <windows.h>
 #include <windowsx.h>
 #include <commctrl.h>
+#include <tlhelp32.h>
 #include <tchar.h>
-#include <cstring>
 #include <string>
+#include <cstring>
+#include <cassert>
 #include <shlwapi.h>
 #include <strsafe.h>
 #include "../hooker.h"
@@ -32,6 +34,196 @@ LPTSTR LoadStringDx(INT nID)
     pszBuff[0] = 0;
     ::LoadString(NULL, nID, pszBuff, cchBuffMax);
     return pszBuff;
+}
+
+static BOOL EnableProcessPriviledge(LPCTSTR pszSE_)
+{
+    BOOL f;
+    HANDLE hProcess;
+    HANDLE hToken;
+    LUID luid;
+    TOKEN_PRIVILEGES tp;
+    
+    f = FALSE;
+    hProcess = GetCurrentProcess();
+    if (OpenProcessToken(hProcess, TOKEN_ADJUST_PRIVILEGES, &hToken))
+    {
+        if (LookupPrivilegeValue(NULL, pszSE_, &luid))
+        {
+            tp.PrivilegeCount = 1;
+            tp.Privileges[0].Attributes = SE_PRIVILEGE_ENABLED;
+            tp.Privileges[0].Luid = luid;
+            f = AdjustTokenPrivileges(hToken, FALSE, &tp, 0, NULL, NULL);
+        }
+        CloseHandle(hToken);
+    }
+    return f;
+}
+
+static BOOL DoSuspendProcess(CBTDATA *pData, DWORD pid, BOOL bSuspend)
+{
+    if (pData->self_pid == pid || pData->dwMyPID == pid)
+        return FALSE;
+
+#ifdef _WIN64
+    if (!pData->is_64bit)
+        return FALSE;
+#else
+    if (pData->is_64bit)
+        return FALSE;
+#endif
+
+    EnableProcessPriviledge(SE_DEBUG_NAME);
+
+    HANDLE hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, 0);
+    if (hSnapshot == INVALID_HANDLE_VALUE)
+        return FALSE;
+
+    BOOL bSuccess = FALSE;
+    THREADENTRY32 entry = { sizeof(entry) };
+    if (Thread32First(hSnapshot, &entry))
+    {
+        do
+        {
+            if (entry.th32OwnerProcessID == pid)
+            {
+                if (HANDLE hThread = OpenThread(THREAD_SUSPEND_RESUME, FALSE, entry.th32ThreadID))
+                {
+                    if (bSuspend)
+                        SuspendThread(hThread);
+                    else
+                        ResumeThread(hThread);
+                    CloseHandle(hThread);
+                    bSuccess = TRUE;
+                }
+            }
+        } while (Thread32Next(hSnapshot, &entry));
+    }
+
+    CloseHandle(hSnapshot);
+    assert(bSuccess);
+    return bSuccess;
+}
+
+static BOOL DoSuspendWindow(CBTDATA *pData, HWND hwnd, BOOL bSuspend)
+{
+    DWORD pid = 0;
+    GetWindowThreadProcessId(hwnd, &pid);
+
+    if (bSuspend)
+        return DoSuspendProcess(pData, pid, TRUE);
+    else
+        return DoSuspendProcess(pData, pid, FALSE);
+}
+
+VOID JustDoIt(HWND hwnd, CBTDATA *pData)
+{
+    switch (pData->iAction)
+    {
+    case AT_NOTHING: // Do nothing
+        break;
+    case AT_SUSPEND: // Suspend
+        DoSuspendWindow(pData, hwnd, TRUE);
+        break;
+    case AT_RESUME: // Resume
+        DoSuspendWindow(pData, hwnd, FALSE);
+        break;
+    case AT_MAXIMIZE: // Maximize
+        ShowWindowAsync(hwnd, SW_MAXIMIZE);
+        break;
+    case AT_MINIMIZE: // Minimize
+        ShowWindowAsync(hwnd, SW_MINIMIZE);
+        break;
+    case AT_RESTORE: // Restore
+        ShowWindowAsync(hwnd, SW_RESTORE);
+        break;
+    case AT_SHOW: // Show
+        ShowWindowAsync(hwnd, SW_SHOWNORMAL);
+        break;
+    case AT_HIDE: // Hide
+        ShowWindowAsync(hwnd, SW_HIDE);
+        break;
+    case AT_CLOSE: // Close
+        PostMessage(hwnd, WM_CLOSE, 0, 0);
+        break;
+    case AT_DESTROY: // Destroy
+        DestroyWindow(hwnd);
+        break;
+    }
+}
+
+static BOOL DoesMatch(HWND hwnd, CBTDATA *pData)
+{
+    if (!IsWindow(hwnd))
+        return FALSE;
+
+    TCHAR szText[MAX_PATH];
+    BOOL bMatched = TRUE;
+    if (bMatched && pData->has_cls)
+    {
+        szText[0] = 0;
+        GetClassName(hwnd, szText, _countof(szText));
+        if (lstrcmpi(szText, pData->cls) != 0)
+            bMatched = FALSE;
+    }
+    if (bMatched && pData->has_txt)
+    {
+        szText[0] = 0;
+        GetWindowText(hwnd, szText, _countof(szText));
+        CharUpper(szText);
+
+        WCHAR szText2[MAX_PATH];
+        szText2[0] = 0;
+        StringCbCopy(szText2, sizeof(szText2), pData->txt);
+        CharUpper(szText2);
+
+        if (_tcsstr(szText, szText2) == NULL)
+            bMatched = FALSE;
+    }
+    if (bMatched && pData->has_pid)
+    {
+        DWORD pid = 0;
+        GetWindowThreadProcessId(hwnd, &pid);
+        if (pData->pid != pid)
+            bMatched = FALSE;
+    }
+    if (bMatched && pData->has_tid)
+    {
+        DWORD tid = GetWindowThreadProcessId(hwnd, NULL);
+        if (pData->tid != tid)
+            bMatched = FALSE;
+    }
+
+    return bMatched;
+}
+
+static BOOL CALLBACK
+EnumChildProc(HWND hwnd, LPARAM lParam)
+{
+    auto pData = reinterpret_cast<CBTDATA *>(lParam);
+    if (DoesMatch(hwnd, pData))
+    {
+        JustDoIt(hwnd, pData);
+    }
+    return TRUE;
+}
+
+static BOOL CALLBACK
+EnumWindowsProc(HWND hwnd, LPARAM lParam)
+{
+    auto pData = reinterpret_cast<CBTDATA *>(lParam);
+    if (DoesMatch(hwnd, pData))
+    {
+        JustDoIt(hwnd, pData);
+    }
+    EnumChildWindows(hwnd, EnumChildProc, lParam);
+    return TRUE;
+}
+
+VOID DoItNow(ACTION_TYPE iAction, CBTDATA *pData)
+{
+    pData->iAction = iAction;
+    EnumWindows(EnumWindowsProc, reinterpret_cast<LPARAM>(pData));
 }
 
 static BOOL DoChangeMessageFilter(HWND hwnd, UINT message, DWORD dwFlag)
@@ -439,7 +631,13 @@ void OnCancel(HWND hwnd)
 void OnPsh1(HWND hwnd)
 {
     INT iAction = SendDlgItemMessage(hwnd, cmb6, CB_GETCURSEL, 0, 0);
-    DoWatcherAction(hwnd, iAction);
+
+    CBTDATA data;
+    if (DoPrepareData(hwnd, data))
+    {
+        DoAddText(hwnd, TEXT("DoItNow()\r\n"));
+        DoItNow(static_cast<ACTION_TYPE>(iAction), &data);
+    }
 }
 
 void OnPsh2(HWND hwnd)
