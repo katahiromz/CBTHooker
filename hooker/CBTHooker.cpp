@@ -6,7 +6,7 @@
 #include <string>
 #include <shlwapi.h>
 #include <strsafe.h>
-#include "../CBTHooker.h"
+#include "../hooker.h"
 #include "resource.h"
 
 #define TIMER_ID 0xFEEDBEEF

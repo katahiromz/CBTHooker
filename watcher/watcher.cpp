@@ -5,7 +5,7 @@
 #include <cassert>
 #include <string>
 #include <strsafe.h>
-#include "../CBTHooker.h"
+#include "../hooker.h"
 
 #ifdef UNICODE
     typedef std::wstring tstring;
