@@ -63,6 +63,7 @@ STRINGTABLE
     IDS_HCBT_KEYSKIPPED, "HCBT_KEYSKIPPED"
     IDS_HCBT_QS, "HCBT_QS"
     IDS_HCBT_SYSCOMMAND, "HCBT_SYSCOMMAND"
+    IDS_ALLCBT, "(すべての CBT タイプ)"
 }
 
 //////////////////////////////////////////////////////////////////////////////

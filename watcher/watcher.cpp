@@ -202,7 +202,7 @@ EXTERN_C INT wmain(INT argc, LPWSTR *argv)
     case HCBT_ACTIVATE: case HCBT_CREATEWND: case HCBT_DESTROYWND:
     case HCBT_MINMAX: case HCBT_SETFOCUS: case HCBT_MOVESIZE:
     case HCBT_CLICKSKIPPED: case HCBT_KEYSKIPPED: case HCBT_QS:
-    case HCBT_SYSCOMMAND:
+    case HCBT_SYSCOMMAND: case 0:
         break;
     default:
         fprintf(stderr, "ERROR: invalid code\n");

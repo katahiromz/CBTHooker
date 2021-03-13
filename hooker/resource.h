@@ -17,6 +17,7 @@
 #define IDS_HCBT_KEYSKIPPED                 107
 #define IDS_HCBT_QS                         108
 #define IDS_HCBT_SYSCOMMAND                 109
+#define IDS_ALLCBT                          110
 #define IDS_AT_NOTHING                      200
 #define IDS_AT_SUSPEND                      201
 #define IDS_AT_RESUME                       202

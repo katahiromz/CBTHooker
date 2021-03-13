@@ -74,7 +74,7 @@ BOOL OnInitDialog(HWND hwnd, HWND hwndFocus, LPARAM lParam)
         IDS_HCBT_ACTIVATE, IDS_HCBT_CREATEWND, IDS_HCBT_DESTROYWND,
         IDS_HCBT_MINMAX, IDS_HCBT_SETFOCUS, IDS_HCBT_MOVESIZE,
         IDS_HCBT_CLICKSKIPPED, IDS_HCBT_KEYSKIPPED, IDS_HCBT_QS,
-        IDS_HCBT_SYSCOMMAND
+        IDS_HCBT_SYSCOMMAND, IDS_ALLCBT
     };
     for (auto id : s_cbt_sids)
     {
@@ -335,6 +335,7 @@ BOOL DoPrepareData(HWND hwnd, CBTDATA& data)
     case 7: data.nCode = HCBT_KEYSKIPPED; break;
     case 8: data.nCode = HCBT_QS; break;
     case 9: data.nCode = HCBT_SYSCOMMAND; break;
+    case 10: data.nCode = 0; break;
     default:
         MessageBox(hwnd, LoadStringDx(IDS_CHOOSECBTTYPE), NULL, MB_ICONERROR);
         return FALSE;
