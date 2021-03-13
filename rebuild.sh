@@ -1,4 +1,4 @@
 #!/usr/bin/env bash
 rm CMakeCache.txt
-cmake -G "MSYS Makefiles" .
+cmake -DCMAKE_BUILD_TYPE=Release -G "MSYS Makefiles" .
 make -j3
