@@ -567,7 +567,7 @@ static void OnUser100(HWND hwndNotify, HWND hwnd, INT nCode)
         break;
     }
 
-    DoAddText(hwnd, szText);
+    DoAddText(hwndNotify, szText);
 }
 
 INT_PTR CALLBACK
@@ -577,7 +577,7 @@ DialogProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
     {
         HANDLE_MSG(hwnd, WM_INITDIALOG, OnInitDialog);
         HANDLE_MSG(hwnd, WM_COMMAND, OnCommand);
-    case WM_USER + 100:
+    case (WM_USER + 100):
         OnUser100(hwnd, reinterpret_cast<HWND>(wParam), LOWORD(lParam));
         break;
     }
