@@ -171,6 +171,7 @@ EXTERN_C int wmain(int argc, LPWSTR *argv)
     }
 
     WNDCLASS wc;
+    ZeroMemory(&wc, sizeof(wc));
     wc.lpfnWndProc = WindowProc;
     wc.hInstance = GetModuleHandle(NULL);
     wc.hIcon = LoadIcon(NULL, IDI_APPLICATION);
@@ -183,7 +184,7 @@ EXTERN_C int wmain(int argc, LPWSTR *argv)
 #endif
     if (!RegisterClass(&wc))
     {
-        fprintf(stderr, "ERROR: RegisterClass failed\n");
+        MessageBox(NULL, TEXT("ERROR: RegisterClass failed"), NULL, MB_ICONERROR);
         return EXIT_FAILURE;
     }
 
@@ -213,7 +214,7 @@ EXTERN_C int wmain(int argc, LPWSTR *argv)
         NULL, NULL, GetModuleHandle(NULL), pData);
     if (hwnd == NULL)
     {
-        fprintf(stderr, "ERROR: CreateWindow failed\n");
+        MessageBox(NULL, TEXT("ERROR: CreateWindow failed"), NULL, MB_ICONERROR);
         delete pData;
         return EXIT_FAILURE;
     }
