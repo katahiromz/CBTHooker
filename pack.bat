@@ -7,3 +7,4 @@ copy /Y watcher32.exe %MYDIR%
 copy /Y watcher64.exe %MYDIR%
 copy /Y CBTHooker.exe %MYDIR%
 copy /Y README.txt %MYDIR%
+copy /Y LICENSE.txt %MYDIR%
