@@ -101,47 +101,51 @@ static BOOL DoSuspendWindow(CBTDATA *pData, HWND hwnd, BOOL bSuspend)
         return DoSuspendProcess(pData, pid, FALSE);
 }
 
-CBTHOOKAPI VOID APIENTRY DoAction(HWND hwnd, ACTION_TYPE iAction)
+CBTHOOKAPI VOID APIENTRY
+DoAction(HWND hwnd, ACTION_TYPE iAction, CBTDATA *pData OPTIONAL)
 {
-    if (CBTMAP *pMap = DoMap())
+    CBTMAP *pMap = NULL;
+    if (pData == NULL)
     {
-        CBTDATA *pData = pMap->pData;
-
-        switch (iAction)
-        {
-        case AT_NOTHING: // Do nothing
-            break;
-        case AT_SUSPEND: // Suspend
-            DoSuspendWindow(pData, hwnd, TRUE);
-            break;
-        case AT_RESUME: // Resume
-            DoSuspendWindow(pData, hwnd, FALSE);
-            break;
-        case AT_MAXIMIZE: // Maximize
-            ShowWindowAsync(hwnd, SW_MAXIMIZE);
-            break;
-        case AT_MINIMIZE: // Minimize
-            ShowWindowAsync(hwnd, SW_MINIMIZE);
-            break;
-        case AT_RESTORE: // Restore
-            ShowWindowAsync(hwnd, SW_RESTORE);
-            break;
-        case AT_SHOW: // Show
-            ShowWindowAsync(hwnd, SW_SHOWNORMAL);
-            break;
-        case AT_HIDE: // Hide
-            ShowWindowAsync(hwnd, SW_HIDE);
-            break;
-        case AT_CLOSE: // Close
-            PostMessage(hwnd, WM_CLOSE, 0, 0);
-            break;
-        case AT_DESTROY: // Destroy
-            DestroyWindow(hwnd);
-            break;
-        }
-
-        DoUnMap(pMap);
+        pMap = DoMap();
+        pData = pMap->pData;
     }
+
+    switch (iAction)
+    {
+    case AT_NOTHING: // Do nothing
+        break;
+    case AT_SUSPEND: // Suspend
+        DoSuspendWindow(pData, hwnd, TRUE);
+        break;
+    case AT_RESUME: // Resume
+        DoSuspendWindow(pData, hwnd, FALSE);
+        break;
+    case AT_MAXIMIZE: // Maximize
+        ShowWindowAsync(hwnd, SW_MAXIMIZE);
+        break;
+    case AT_MINIMIZE: // Minimize
+        ShowWindowAsync(hwnd, SW_MINIMIZE);
+        break;
+    case AT_RESTORE: // Restore
+        ShowWindowAsync(hwnd, SW_RESTORE);
+        break;
+    case AT_SHOW: // Show
+        ShowWindowAsync(hwnd, SW_SHOWNORMAL);
+        break;
+    case AT_HIDE: // Hide
+        ShowWindowAsync(hwnd, SW_HIDE);
+        break;
+    case AT_CLOSE: // Close
+        PostMessage(hwnd, WM_CLOSE, 0, 0);
+        break;
+    case AT_DESTROY: // Destroy
+        DestroyWindow(hwnd);
+        break;
+    }
+
+    if (pMap)
+        DoUnMap(pMap);
 }
 
 static BOOL DoesMatch(HWND hwnd, CBTDATA *pData)
@@ -192,7 +196,7 @@ DoTarget(HWND hwnd, CBTDATA *pData, INT nCode)
         pData->hwndFound = hwnd;
         PostMessage(pData->hwndNotify, (WM_USER + 100),
                     reinterpret_cast<WPARAM>(hwnd), WORD(nCode));
-        DoAction(hwnd, pData->iAction);
+        DoAction(hwnd, pData->iAction, pData);
     }
 }
 
