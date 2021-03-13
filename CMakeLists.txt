@@ -38,6 +38,12 @@ endif()
 # Unicode support
 add_definitions(-DUNICODE -D_UNICODE)
 
+# Win64 support
+option(SUPPORT_WIN64 "Win64 support" ON)
+if(SUPPORT_WIN64)
+    add_definitions(-DSUPPORT_WIN64)
+endif()
+
 # dll32.dll and dll64.dll
 add_library(dll SHARED dll/dll.cpp dll/dll.def)
 target_link_libraries(dll PRIVATE)
@@ -60,6 +66,7 @@ elseif(CMAKE_SIZEOF_VOID_P EQUAL 4)
     # CBTHooker.exe
     add_executable(CBTHooker WIN32 CBTHooker/CBTHooker.cpp CBTHooker/CBTHooker_res.rc)
     target_link_libraries(CBTHooker PRIVATE comctl32 shlwapi)
+    target_compile_definitions(CBTHooker PRIVATE)
 else()
     message(FATAL_ERROR "You lose.")
 endif()

@@ -231,6 +231,7 @@ BOOL DoStartWatcher(HWND hwnd, CBTDATA *pData)
         return FALSE;
     }
 
+#ifdef SUPPORT_WIN64
     BOOL b64BitSupport = IsWow64(GetCurrentProcess());
     if (!b64BitSupport)
         return TRUE;
@@ -262,6 +263,7 @@ BOOL DoStartWatcher(HWND hwnd, CBTDATA *pData)
         MessageBox(hwnd, TEXT("ERROR #2"), NULL, MB_ICONERROR);
         return FALSE;
     }
+#endif
 
     return TRUE;
 }
