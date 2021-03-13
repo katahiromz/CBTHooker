@@ -8,3 +8,4 @@ copy /Y watcher64.exe %MYDIR%
 copy /Y CBTHooker.exe %MYDIR%
 copy /Y README.txt %MYDIR%
 copy /Y LICENSE.txt %MYDIR%
+copy /Y README_ja.txt %MYDIR%

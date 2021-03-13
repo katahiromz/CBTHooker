@@ -6,3 +6,8 @@ CBT is a powerful feature of Windows to debug the Windows applications.
 You can pause/resume the process of the specified window at the specified condition.
 
 License: MIT
+
+## Contact Us
+
+Katayama Hirofumi MZ (katahiromz)
+katayama.hirofumi.mz@gmail.com
