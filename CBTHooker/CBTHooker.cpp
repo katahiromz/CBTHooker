@@ -530,7 +530,9 @@ static void OnUser100(HWND hwndNotify, HWND hwnd, INT nCode)
     TCHAR cls[MAX_PATH], txt[MAX_PATH];
 
     tid = GetWindowThreadProcessId(hwnd, &pid);
+    cls[0] = 0;
     GetClassName(hwnd, cls, MAX_PATH);
+    txt[0] = 0;
     GetWindowText(hwnd, txt, MAX_PATH);
 
     switch (nCode)
