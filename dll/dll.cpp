@@ -221,7 +221,7 @@ CBTProc(INT nCode, WPARAM wParam, LPARAM lParam)
     return ::CallNextHookEx(hHook, nCode, wParam, lParam);
 }
 
-CBTHOOKAPI BOOL APIENTRY DoStartWatch(const CBTDATA *pData)
+CBTHOOKAPI BOOL APIENTRY DoStartWatch(const CBTDATA *pData, DWORD dwMyPID)
 {
     if (s_hMapping)
     {
@@ -247,6 +247,7 @@ CBTHOOKAPI BOOL APIENTRY DoStartWatch(const CBTDATA *pData)
     *pNew = *pData;
     pNew->hwndFound = NULL;
     pNew->hHook = SetWindowsHookEx(WH_CBT, CBTProc, s_hinstDLL, 0);
+    pNew->dwMyPID = dwMyPID;
     if (!pNew->hHook)
     {
         UnmapViewOfFile(pView);

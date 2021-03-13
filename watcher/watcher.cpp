@@ -21,7 +21,7 @@ BOOL OnCreate(HWND hwnd, LPCREATESTRUCT lpCreateStruct)
 
 LRESULT OnStartWatch(HWND hwnd, CBTDATA *pData)
 {
-    return DoStartWatch(pData);
+    return DoStartWatch(pData, GetCurrentProcessId());
 }
 
 LRESULT OnEndWatch(HWND hwnd, CBTDATA *pData)

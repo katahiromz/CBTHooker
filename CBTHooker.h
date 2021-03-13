@@ -47,6 +47,7 @@ typedef struct CBTDATA
     DWORD pid;
     DWORD tid;
     DWORD self_pid;
+    DWORD dwMyPID;
     BOOL is_64bit;
     HWND hwndFound;
 } CBTDATA;
@@ -57,7 +58,7 @@ typedef struct CBTMAP
     CBTDATA *pData;
 } CBTMAP;
 
-CBTHOOKAPI BOOL APIENTRY DoStartWatch(const CBTDATA *pData);
+CBTHOOKAPI BOOL APIENTRY DoStartWatch(const CBTDATA *pData, DWORD dwMyPID);
 CBTHOOKAPI BOOL APIENTRY DoEndWatch(VOID);
 CBTHOOKAPI VOID APIENTRY DoAction(HWND hwnd, ACTION_TYPE iAction);
 CBTHOOKAPI HWND APIENTRY DoGetTargetWindow(VOID);
