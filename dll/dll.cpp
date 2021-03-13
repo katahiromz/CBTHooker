@@ -199,7 +199,7 @@ static BOOL DoesMatch(HWND hwnd, CBTDATA *pData)
         StringCbCopy(szText2, sizeof(szText2), pData->txt);
         CharUpper(szText2);
 
-        if (_tcsstr(szText, szText2) != 0)
+        if (_tcsstr(szText, szText2) == NULL)
             bMatched = FALSE;
     }
     if (bMatched && pData->has_pid)
