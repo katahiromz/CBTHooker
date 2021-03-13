@@ -64,7 +64,7 @@ elseif(CMAKE_SIZEOF_VOID_P EQUAL 4)
     set_target_properties(watcher PROPERTIES OUTPUT_NAME "watcher32")
 
     # CBTHooker.exe
-    add_executable(CBTHooker WIN32 CBTHooker/CBTHooker.cpp CBTHooker/CBTHooker_res.rc)
+    add_executable(CBTHooker WIN32 hooker/CBTHooker.cpp hooker/CBTHooker_res.rc)
     target_link_libraries(CBTHooker PRIVATE comctl32 shlwapi)
     target_compile_definitions(CBTHooker PRIVATE)
 else()
