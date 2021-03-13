@@ -232,9 +232,11 @@ BOOL DoStartWatcher(HWND hwnd, CBTDATA *pData)
     }
 
 #ifdef SUPPORT_WIN64
+#ifndef _WIN64
     BOOL b64BitSupport = IsWow64(GetCurrentProcess());
     if (!b64BitSupport)
         return TRUE;
+#endif
 
     PathRemoveFileSpec(szPath);
     PathAppend(szPath, TEXT("watcher64.exe"));
