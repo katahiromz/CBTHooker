@@ -45,7 +45,7 @@ set_target_properties(dll PROPERTIES PREFIX "")
 target_compile_definitions(dll PRIVATE -DCBTHOOK_DLL)
 
 # watcher32.exe and watcher64.exe
-add_executable(watcher WIN32 watcher/watcher.cpp)
+add_executable(watcher watcher/watcher.cpp)
 target_link_libraries(watcher PRIVATE dll)
 target_compile_definitions(watcher PRIVATE)
 
