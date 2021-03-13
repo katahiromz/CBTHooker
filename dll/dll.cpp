@@ -305,8 +305,9 @@ CBTHOOKAPI BOOL APIENTRY DoEndWatch(VOID)
 {
     if (CBTMAP *pMap = DoMap())
     {
-        HHOOK hHook = pMap->pData->hHook;
-        pMap->pData->hHook = NULL;
+        auto pData = pMap->pData;
+        HHOOK hHook = pData->hHook;
+        pData->hHook = NULL;
         UnhookWindowsHookEx(hHook);
         DoUnMap(pMap);
     }
@@ -341,7 +342,6 @@ DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved)
         DisableThreadLibraryCalls(hinstDLL);
         break;
     case DLL_PROCESS_DETACH:
-        DoEndWatch();
         break;
     }
     return TRUE;

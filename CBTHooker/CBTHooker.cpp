@@ -556,17 +556,17 @@ void OnCommand(HWND hwnd, int id, HWND hwndCtl, UINT codeNotify)
 }
 
 static void
-OnMyNotify(HWND hwndNotify, HWND hwnd, INT nCode, BOOL fRestart)
+OnMyNotify(HWND hwndNotify, HWND hwndTarget, INT nCode, BOOL fRestart)
 {
     TCHAR szText[MAX_PATH * 3];
     DWORD tid, pid;
     TCHAR cls[MAX_PATH], txt[MAX_PATH];
 
-    tid = GetWindowThreadProcessId(hwnd, &pid);
+    tid = GetWindowThreadProcessId(hwndTarget, &pid);
     cls[0] = 0;
-    GetClassName(hwnd, cls, MAX_PATH);
+    GetClassName(hwndTarget, cls, MAX_PATH);
     txt[0] = 0;
-    GetWindowText(hwnd, txt, MAX_PATH);
+    GetWindowText(hwndTarget, txt, MAX_PATH);
 
     szText[0] = 0;
     switch (nCode)
@@ -574,32 +574,32 @@ OnMyNotify(HWND hwndNotify, HWND hwnd, INT nCode, BOOL fRestart)
     case HCBT_ACTIVATE:
         StringCbPrintf(szText, sizeof(szText),
             TEXT("HCBT_ACTIVATE(hwnd:%p, pid:%lu (0x%lX), tid:%lu (0x%lX), cls:'%s', txt:'%s')\r\n"),
-            hwnd, pid, pid, tid, tid, cls, txt);
+            hwndTarget, pid, pid, tid, tid, cls, txt);
         break;
     case HCBT_CREATEWND:
         StringCbPrintf(szText, sizeof(szText),
             TEXT("HCBT_CREATEWND(hwnd:%p, pid:%lu (0x%lX), tid:%lu (0x%lX), cls:'%s', txt:'%s')\r\n"),
-            hwnd, pid, pid, tid, tid, cls, txt);
+            hwndTarget, pid, pid, tid, tid, cls, txt);
         break;
     case HCBT_DESTROYWND:
         StringCbPrintf(szText, sizeof(szText),
             TEXT("HCBT_DESTROYWND(hwnd:%p, pid:%lu (0x%lX), tid:%lu (0x%lX), cls:'%s', txt:'%s')\r\n"),
-            hwnd, pid, pid, tid, tid, cls, txt);
+            hwndTarget, pid, pid, tid, tid, cls, txt);
         break;
     case HCBT_MINMAX:
         StringCbPrintf(szText, sizeof(szText),
             TEXT("HCBT_MINMAX(hwnd:%p, pid:%lu (0x%lX), tid:%lu (0x%lX), cls:'%s', txt:'%s')\r\n"),
-            hwnd, pid, pid, tid, tid, cls, txt);
+            hwndTarget, pid, pid, tid, tid, cls, txt);
         break;
     case HCBT_MOVESIZE:
         StringCbPrintf(szText, sizeof(szText),
             TEXT("HCBT_MOVESIZE(hwnd:%p, pid:%lu (0x%lX), tid:%lu (0x%lX), cls:'%s', txt:'%s')\r\n"),
-            hwnd, pid, pid, tid, tid, cls, txt);
+            hwndTarget, pid, pid, tid, tid, cls, txt);
         break;
     case HCBT_SETFOCUS:
         StringCbPrintf(szText, sizeof(szText),
             TEXT("HCBT_SETFOCUS(hwnd:%p, pid:%lu (0x%lX), tid:%lu (0x%lX), cls:'%s', txt:'%s')\r\n"),
-            hwnd, pid, pid, tid, tid, cls, txt);
+            hwndTarget, pid, pid, tid, tid, cls, txt);
         break;
     }
 
@@ -609,16 +609,17 @@ OnMyNotify(HWND hwndNotify, HWND hwnd, INT nCode, BOOL fRestart)
     {
         if (DoEndWatcher())
         {
-            DoAddText(hwnd, TEXT("DoEndWatcher()\r\n"));
+            DoAddText(hwndNotify, TEXT("DoEndWatcher()\r\n"));
             s_bWatching = FALSE;
-            DoEnableControls(hwnd, TRUE);
+            DoEnableControls(hwndNotify, TRUE);
         }
+        Sleep(500);
         CBTDATA data;
-        if (DoPrepareData(hwnd, data) && DoStartWatcher(hwnd, &data))
+        if (DoPrepareData(hwndNotify, data) && DoStartWatcher(hwndNotify, &data))
         {
-            DoAddText(hwnd, TEXT("DoStartWatcher()\r\n"));
+            DoAddText(hwndNotify, TEXT("DoStartWatcher()\r\n"));
             s_bWatching = TRUE;
-            DoEnableControls(hwnd, FALSE);
+            DoEnableControls(hwndNotify, FALSE);
         }
     }
 }
