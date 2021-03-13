@@ -46,9 +46,9 @@ static BOOL DoChangeMessageFilter(HWND hwnd, UINT message, DWORD dwFlag)
         return (*fn1)(hwnd, message, MSGFLT_ALLOW, NULL);
     }
     auto fn2 = (FN_ChangeWindowMessageFilter)GetProcAddress(hUser32, "ChangeWindowMessageFilter");
-    if (!fn2)
-        return FALSE;
-    return (*fn2)(message, dwFlag);
+    if (fn2)
+        return (*fn2)(message, dwFlag);
+    return FALSE;
 }
 
 void DoAddText(HWND hwnd, LPCTSTR pszText)
@@ -143,43 +143,40 @@ void DoEnableControls(HWND hwnd, BOOL bEnable)
     }
 }
 
-static LPTSTR DoGetParams(HWND hwnd, CBTDATA *pData)
+static LPTSTR DoGetParams(HWND hwnd, LPCTSTR pszExe, CBTDATA *pData)
 {
     TCHAR sz1[MAX_PATH], sz2[MAX_PATH];
     TCHAR sz3[32], sz4[32], sz5[32];
     static TCHAR s_szText[MAX_PATH * 3];
 
     if (pData->has_cls)
-        StringCbPrintf(sz1, sizeof(sz1), TEXT("/cls \"%s\""), pData->cls);
+        StringCbPrintf(sz1, sizeof(sz1), TEXT("--cls \"%s\""), pData->cls);
     else
         sz1[0] = 0;
 
     if (pData->has_txt)
-        StringCbPrintf(sz2, sizeof(sz2), TEXT("/txt \"%s\""), pData->txt);
+        StringCbPrintf(sz2, sizeof(sz2), TEXT("--txt \"%s\""), pData->txt);
     else
         sz2[0] = 0;
 
     if (pData->has_pid)
-        StringCbPrintf(sz3, sizeof(sz3), TEXT("/pid %u"), pData->pid);
+        StringCbPrintf(sz3, sizeof(sz3), TEXT("--pid %u"), pData->pid);
     else
         sz3[0] = 0;
 
     if (pData->has_tid)
-        StringCbPrintf(sz4, sizeof(sz4), TEXT("/tid %u"), pData->tid);
+        StringCbPrintf(sz4, sizeof(sz4), TEXT("--tid %u"), pData->tid);
     else
         sz4[0] = 0;
 
     if (pData->has_self)
-        StringCbPrintf(sz5, sizeof(sz5), TEXT("/self %u"), pData->self_pid);
+        StringCbPrintf(sz5, sizeof(sz5), TEXT("--self %u"), pData->self_pid);
     else
         sz5[0] = 0;
 
     StringCbPrintf(s_szText, sizeof(s_szText),
-        TEXT("/notify %lu /code %d /action %u /self %u ")
-        TEXT("%s %s %s %s %s"),
-        (ULONG)(ULONG_PTR)pData->hwndNotify,
-        pData->nCode,
-        pData->iAction,
+        TEXT("\"%ls\" --notify %lu --code %d --action %u %s %s %s %s %s"),
+        pszExe, (ULONG)(ULONG_PTR)pData->hwndNotify, pData->nCode, pData->iAction,
         sz1, sz2, sz3, sz4, sz5);
     return s_szText;
 }
@@ -199,14 +196,14 @@ BOOL IsWow64(HANDLE hProcess)
     return FALSE;
 }
 
-HANDLE MyCreateProcess(LPCTSTR pszFile, LPTSTR pszParams)
+HANDLE MyCreateProcess(LPTSTR pszParams)
 {
     PROCESS_INFORMATION pi = { NULL };
     STARTUPINFO si = { sizeof(si) };
     si.dwFlags = STARTF_USESHOWWINDOW;
     si.wShowWindow = SW_HIDE;
 
-    if (CreateProcess(pszFile, pszParams, NULL, NULL, FALSE,
+    if (CreateProcess(NULL, pszParams, NULL, NULL, FALSE,
                       CREATE_NEW_CONSOLE, NULL, NULL, &si, &pi))
     {
         CloseHandle(pi.hThread);
@@ -223,10 +220,10 @@ BOOL DoStartWatcher(HWND hwnd, CBTDATA *pData)
     PathRemoveFileSpec(szPath);
     PathAppend(szPath, TEXT("watcher32.exe"));
 
-    LPTSTR pszParams = DoGetParams(hwnd, pData);
+    LPTSTR pszParams = DoGetParams(hwnd, szPath, pData);
     HANDLE hProcess;
     HWND hwndWatcher32 = NULL;
-    hProcess = MyCreateProcess(szPath, pszParams);
+    hProcess = MyCreateProcess(pszParams);
     if (hProcess)
     {
         WaitForInputIdle(hProcess, INFINITE);
@@ -263,7 +260,8 @@ BOOL DoStartWatcher(HWND hwnd, CBTDATA *pData)
         return TRUE;
 
     HWND hwndWatcher64 = NULL;
-    hProcess = MyCreateProcess(szPath, pszParams);
+    pszParams = DoGetParams(hwnd, szPath, pData);
+    hProcess = MyCreateProcess(pszParams);
     if (hProcess)
     {
         WaitForInputIdle(hProcess, INFINITE);
@@ -427,13 +425,19 @@ void OnCancel(HWND hwnd)
         s_bWatching = FALSE;
         DoEnableControls(hwnd, TRUE);
     }
-    EndDialog(hwnd, IDCANCEL);
+    DestroyWindow(hwnd);
 }
 
 void OnPsh1(HWND hwnd)
 {
     INT iAction = SendDlgItemMessage(hwnd, cmb6, CB_GETCURSEL, 0, 0);
     DoWatcherAction(hwnd, iAction);
+}
+
+void OnPsh2(HWND hwnd)
+{
+    HWND hwndEdit = GetDlgItem(hwnd, edt1);
+    SetWindowText(hwndEdit, NULL);
 }
 
 void OnCommand(HWND hwnd, int id, HWND hwndCtl, UINT codeNotify)
@@ -448,6 +452,9 @@ void OnCommand(HWND hwnd, int id, HWND hwndCtl, UINT codeNotify)
         break;
     case psh1:
         OnPsh1(hwnd);
+        break;
+    case psh2:
+        OnPsh2(hwnd);
         break;
     case cmb2:
         if (codeNotify == CBN_EDITCHANGE || codeNotify == CBN_SELENDOK)
@@ -561,6 +568,7 @@ OnMyNotify(HWND hwndNotify, HWND hwnd, INT nCode, BOOL fRestart)
     txt[0] = 0;
     GetWindowText(hwnd, txt, MAX_PATH);
 
+    szText[0] = 0;
     switch (nCode)
     {
     case HCBT_ACTIVATE:
@@ -615,6 +623,11 @@ OnMyNotify(HWND hwndNotify, HWND hwnd, INT nCode, BOOL fRestart)
     }
 }
 
+void OnDestroy(HWND hwnd)
+{
+    PostQuitMessage(0);
+}
+
 INT_PTR CALLBACK
 DialogProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
@@ -622,6 +635,7 @@ DialogProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
     {
         HANDLE_MSG(hwnd, WM_INITDIALOG, OnInitDialog);
         HANDLE_MSG(hwnd, WM_COMMAND, OnCommand);
+        HANDLE_MSG(hwnd, WM_DESTROY, OnDestroy);
     case WM_MYNOTIFY:
         OnMyNotify(hwnd, reinterpret_cast<HWND>(wParam), LOWORD(lParam), HIWORD(lParam));
         break;
@@ -637,6 +651,22 @@ WinMain(HINSTANCE   hInstance,
 {
     s_hInst = hInstance;
     InitCommonControls();
-    DialogBox(hInstance, MAKEINTRESOURCE(IDD_MAIN), NULL, DialogProc);
+
+    HWND hwnd = CreateDialog(hInstance, MAKEINTRESOURCE(IDD_MAIN), NULL, DialogProc);
+    if (hwnd == NULL)
+        return -1;
+
+    ShowWindow(hwnd, SW_SHOWNORMAL);
+    UpdateWindow(hwnd);
+
+    MSG msg;
+    while (GetMessage(&msg, NULL, 0, 0))
+    {
+        if (IsDialogMessage(hwnd, &msg))
+            continue;
+        TranslateMessage(&msg);
+        DispatchMessage(&msg);
+    }
+
     return 0;
 }

@@ -2,6 +2,7 @@
 #include <windowsx.h>
 #include <tchar.h>
 #include <cstring>
+#include <cassert>
 #include <string>
 #include <strsafe.h>
 #include "../CBTHooker.h"
@@ -17,16 +18,16 @@ static BOOL DoChangeMessageFilter(HWND hwnd, UINT message, DWORD dwFlag)
     typedef BOOL (WINAPI *FN_ChangeWindowMessageFilterEx)(HWND, UINT, DWORD, PCHANGEFILTERSTRUCT);
     typedef BOOL (WINAPI *FN_ChangeWindowMessageFilter)(UINT, DWORD);
 
-    HMODULE hUser32 = GetModuleHandle(TEXT("user32"));
+    HMODULE hUser32 = GetModuleHandleW(L"user32");
     auto fn1 = (FN_ChangeWindowMessageFilterEx)GetProcAddress(hUser32, "ChangeWindowMessageFilterEx");
     if (fn1)
     {
         return (*fn1)(hwnd, message, MSGFLT_ALLOW, NULL);
     }
     auto fn2 = (FN_ChangeWindowMessageFilter)GetProcAddress(hUser32, "ChangeWindowMessageFilter");
-    if (!fn2)
-        return FALSE;
-    return (*fn2)(message, dwFlag);
+    if (fn2)
+        return (*fn2)(message, dwFlag);
+    return FALSE;
 }
 
 BOOL OnCreate(HWND hwnd, LPCREATESTRUCT lpCreateStruct)
@@ -95,7 +96,7 @@ WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
     return 0;
 }
 
-EXTERN_C int wmain(int argc, LPWSTR *argv)
+EXTERN_C INT wmain(INT argc, LPWSTR *argv)
 {
     if (argc <= 1 ||
         lstrcmpiW(argv[1], L"--help") == 0 ||
@@ -112,67 +113,85 @@ EXTERN_C int wmain(int argc, LPWSTR *argv)
     BOOL has_tid = FALSE, has_self = FALSE;
     tstring cls, txt;
     DWORD pid = 0, tid = 0, self_pid = 0;
-    for (int iarg = 1; iarg < argc; ++iarg)
+    for (INT iarg = 1; iarg < argc; ++iarg)
     {
-        LPTSTR arg = argv[iarg];
+        LPWSTR arg = argv[iarg];
+        if (arg == NULL)
+            break;
 
-        if (lstrcmpi(arg, TEXT("/notify")) == 0)
+        if (lstrcmpiW(arg, L"--notify") == 0)
         {
             ++iarg;
-            hwndNotify = (HWND)(ULONG_PTR)_tcstoul(argv[iarg], NULL, 0);
+            if (argv[iarg] == NULL)
+                break;
+            hwndNotify = (HWND)(ULONG_PTR)wcstoul(argv[iarg], NULL, 0);
             continue;
         }
 
-        if (lstrcmpi(arg, TEXT("/code")) == 0)
+        if (lstrcmpiW(arg, L"--code") == 0)
         {
             ++iarg;
-            nCode = _ttoi(argv[iarg]);
+            if (argv[iarg] == NULL)
+                break;
+            nCode = _wtoi(argv[iarg]);
             continue;
         }
 
-        if (lstrcmpi(arg, TEXT("/action")) == 0)
+        if (lstrcmpiW(arg, L"--action") == 0)
         {
             ++iarg;
-            iAction = _ttoi(argv[iarg]);
+            if (argv[iarg] == NULL)
+                break;
+            iAction = _wtoi(argv[iarg]);
             continue;
         }
 
-        if (lstrcmpi(arg, TEXT("/cls")) == 0)
+        if (lstrcmpiW(arg, L"--cls") == 0)
         {
             ++iarg;
+            if (argv[iarg] == NULL)
+                break;
             cls = argv[iarg];
             has_cls = TRUE;
             continue;
         }
 
-        if (lstrcmpi(arg, TEXT("/txt")) == 0)
+        if (lstrcmpiW(arg, L"--txt") == 0)
         {
             ++iarg;
+            if (argv[iarg] == NULL)
+                break;
             txt = argv[iarg];
             has_txt = TRUE;
             continue;
         }
 
-        if (lstrcmpi(arg, TEXT("/pid")) == 0)
+        if (lstrcmpiW(arg, L"--pid") == 0)
         {
             ++iarg;
-            pid = _tcstoul(argv[iarg], NULL, 0);
+            if (argv[iarg] == NULL)
+                break;
+            pid = wcstoul(argv[iarg], NULL, 0);
             has_pid = TRUE;
             continue;
         }
 
-        if (lstrcmpi(arg, TEXT("/tid")) == 0)
+        if (lstrcmpiW(arg, L"--tid") == 0)
         {
             ++iarg;
-            tid = _tcstoul(argv[iarg], NULL, 0);
+            if (argv[iarg] == NULL)
+                break;
+            tid = wcstoul(argv[iarg], NULL, 0);
             has_tid = TRUE;
             continue;
         }
 
-        if (lstrcmpi(arg, TEXT("/self")) == 0)
+        if (lstrcmpiW(arg, L"--self") == 0)
         {
             ++iarg;
-            self_pid = _tcstoul(argv[iarg], NULL, 0);
+            if (argv[iarg] == NULL)
+                break;
+            self_pid = wcstoul(argv[iarg], NULL, 0);
             has_self = TRUE;
             continue;
         }
@@ -260,7 +279,7 @@ EXTERN_C int wmain(int argc, LPWSTR *argv)
 
 int main(int argc, char **argv)
 {
-    INT my_argc;
+    INT my_argc = 0;
     LPWSTR *my_wargv = CommandLineToArgvW(GetCommandLineW(), &my_argc);
     INT ret = wmain(my_argc, my_wargv);
     LocalFree(my_wargv);

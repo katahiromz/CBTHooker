@@ -176,21 +176,26 @@ DoAction(HWND hwnd, ACTION_TYPE iAction, CBTDATA *pData OPTIONAL)
 
 static BOOL DoesMatch(HWND hwnd, CBTDATA *pData)
 {
+    if (!IsWindow(hwnd))
+        return FALSE;
+
     TCHAR szText[MAX_PATH];
     BOOL bMatched = TRUE;
-
     if (bMatched && pData->has_cls)
     {
+        szText[0] = 0;
         GetClassName(hwnd, szText, _countof(szText));
         if (lstrcmpi(szText, pData->cls) != 0)
             bMatched = FALSE;
     }
     if (bMatched && pData->has_txt)
     {
+        szText[0] = 0;
         GetWindowText(hwnd, szText, _countof(szText));
         CharUpper(szText);
 
         WCHAR szText2[MAX_PATH];
+        szText2[0] = 0;
         StringCbCopy(szText2, sizeof(szText2), pData->txt);
         CharUpper(szText2);
 
