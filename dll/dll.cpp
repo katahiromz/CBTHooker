@@ -49,6 +49,9 @@ static void DoUnMap(CBTMAP *pMap)
 
 static BOOL DoSuspendProcess(CBTDATA *pData, DWORD pid, BOOL bSuspend)
 {
+    if (pData->self_pid == pid || pData->dwMyPID == pid)
+        return FALSE;
+
 #ifdef _WIN64
     if (!pData->is_64bit)
         return FALSE;
