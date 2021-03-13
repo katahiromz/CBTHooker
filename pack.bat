@@ -1,5 +1,5 @@
 @echo on
-set MYDIR=CBTHooker-1.0-bin
+set MYDIR=CBTHooker-1.1-bin
 if not exist %MYDIR% mkdir %MYDIR%
 copy /Y dll32.dll %MYDIR%
 copy /Y dll64.dll %MYDIR%
