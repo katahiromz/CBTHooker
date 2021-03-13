@@ -37,16 +37,9 @@ LRESULT OnAction(HWND hwnd, CBTDATA *pData, INT iAction)
     {
         switch (iAction)
         {
-        case AT_NOTHING:
-        case AT_SUSPEND:
-        case AT_RESUME:
-        case AT_MAXIMIZE:
-        case AT_MINIMIZE:
-        case AT_RESTORE:
-        case AT_SHOW:
-        case AT_HIDE:
-        case AT_CLOSE:
-        case AT_DESTROY:
+        case AT_NOTHING: case AT_SUSPEND: case AT_RESUME: case AT_MAXIMIZE:
+        case AT_MINIMIZE: case AT_RESTORE: case AT_SHOW: case AT_HIDE:
+        case AT_CLOSE: case AT_DESTROY:
             DoAction(hwndTarget, static_cast<ACTION_TYPE>(iAction));
             break;
         default:

@@ -124,7 +124,7 @@ void DoEnableControls(HWND hwnd, BOOL bEnable)
     }
 }
 
-static LPCTSTR DoGetParams(HWND hwnd, CBTDATA *pData)
+static LPTSTR DoGetParams(HWND hwnd, CBTDATA *pData)
 {
     TCHAR sz1[MAX_PATH], sz2[MAX_PATH];
     TCHAR sz3[32], sz4[32], sz5[32];
@@ -180,6 +180,23 @@ BOOL IsWow64(HANDLE hProcess)
     return FALSE;
 }
 
+HANDLE MyCreateProcess(LPCTSTR pszFile, LPTSTR pszParams)
+{
+    PROCESS_INFORMATION pi = { NULL };
+    STARTUPINFO si = { sizeof(si) };
+    si.dwFlags = STARTF_USESHOWWINDOW;
+    si.wShowWindow = SW_HIDE;
+
+    if (CreateProcess(pszFile, pszParams, NULL, NULL, FALSE,
+                      CREATE_NEW_CONSOLE, NULL, NULL, &si, &pi))
+    {
+        CloseHandle(pi.hThread);
+        return pi.hProcess;
+    }
+    
+    return NULL;
+}
+
 BOOL DoStartWatcher(HWND hwnd, CBTDATA *pData)
 {
     TCHAR szPath[MAX_PATH];
@@ -187,19 +204,26 @@ BOOL DoStartWatcher(HWND hwnd, CBTDATA *pData)
     PathRemoveFileSpec(szPath);
     PathAppend(szPath, TEXT("watcher32.exe"));
 
-    LPCTSTR pszParams = DoGetParams(hwnd, pData);
-    INT ret1 = (INT)(ULONG_PTR)ShellExecute(hwnd, NULL, szPath, pszParams, NULL, SW_HIDE);
-    if (ret1 > 32)
+    LPTSTR pszParams = DoGetParams(hwnd, pData);
+    HANDLE hProcess;
+    HWND hwndWatcher32 = NULL;
+    hProcess = MyCreateProcess(szPath, pszParams);
+    if (hProcess)
     {
-        HWND hwndWatcher;
-        for (;;)
+        WaitForInputIdle(hProcess, INFINITE);
+        CloseHandle(hProcess);
+        for (INT i = 0; i < 5; ++i)
         {
-            hwndWatcher = FindWindow(WC_WATCHER32, NULL);
-            if (hwndWatcher)
+            hwndWatcher32 = FindWindow(WC_WATCHER32, NULL);
+            if (hwndWatcher32)
                 break;
             Sleep(100);
         }
-        PostMessage(hwndWatcher, WATCH_START, 0, 0);
+    }
+
+    if (hwndWatcher32)
+    {
+        PostMessage(hwndWatcher32, WATCH_START, 0, 0);
     }
     else
     {
@@ -213,21 +237,28 @@ BOOL DoStartWatcher(HWND hwnd, CBTDATA *pData)
 
     PathRemoveFileSpec(szPath);
     PathAppend(szPath, TEXT("watcher64.exe"));
-    INT ret2 = (INT)(ULONG_PTR)ShellExecute(hwnd, NULL, szPath, pszParams, NULL, SW_HIDE);
-    if (ret2 > 32)
+    HWND hwndWatcher64 = NULL;
+    hProcess = MyCreateProcess(szPath, pszParams);
+    if (hProcess)
     {
-        HWND hwndWatcher;
-        for (;;)
+        WaitForInputIdle(hProcess, INFINITE);
+        CloseHandle(hProcess);
+        for (INT i = 0; i < 5; ++i)
         {
-            hwndWatcher = FindWindow(WC_WATCHER64, NULL);
-            if (hwndWatcher)
+            hwndWatcher64 = FindWindow(WC_WATCHER64, NULL);
+            if (hwndWatcher64)
                 break;
             Sleep(100);
         }
-        PostMessage(hwndWatcher, WATCH_START, 0, 0);
+    }
+
+    if (hwndWatcher64)
+    {
+        PostMessage(hwndWatcher64, WATCH_START, 0, 0);
     }
     else
     {
+        PostMessage(hwndWatcher32, WATCH_END, 0, 0);
         MessageBox(hwnd, TEXT("ERROR #2"), NULL, MB_ICONERROR);
         return FALSE;
     }
