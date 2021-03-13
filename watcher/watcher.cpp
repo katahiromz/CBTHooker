@@ -76,6 +76,14 @@ WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 
 EXTERN_C int wmain(int argc, LPWSTR *argv)
 {
+    if (argc <= 1 ||
+        lstrcmpiW(argv[1], L"--help") == 0 ||
+        lstrcmpiW(argv[1], L"--version") == 0)
+    {
+        fprintf(stderr, "ERROR: You should not startup this program manually\n");
+        return EXIT_FAILURE;
+    }
+
     HWND hwndNotify = NULL;
     INT nCode = HCBT_ACTIVATE;
     INT iAction = AT_NOTHING;

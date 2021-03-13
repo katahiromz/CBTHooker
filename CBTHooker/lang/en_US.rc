@@ -54,6 +54,7 @@ STRINGTABLE
     IDS_AT_DESTROY, "Destroy window"
     IDS_STARTWATCH, "Start &watching"
     IDS_ENDWATCH, "End &watching"
+    IDS_TOOVAGUE, "The information is too vague. Please enter a little more information."
 }
 
 //////////////////////////////////////////////////////////////////////////////

@@ -240,6 +240,9 @@ BOOL DoStartWatcher(HWND hwnd, CBTDATA *pData)
 
     PathRemoveFileSpec(szPath);
     PathAppend(szPath, TEXT("watcher64.exe"));
+    if (!PathFileExists(szPath))
+        return TRUE;
+
     HWND hwndWatcher64 = NULL;
     hProcess = MyCreateProcess(szPath, pszParams);
     if (hProcess)
@@ -366,6 +369,13 @@ void OnOK(HWND hwnd)
         data.self_pid = GetCurrentProcessId();
         data.hwndNotify = hwnd;
         data.hwndFound = NULL;
+
+        if (!data.has_cls && !data.has_txt &&
+            !data.has_pid && !data.has_tid)
+        {
+            MessageBox(hwnd, LoadStringDx(IDS_TOOVAGUE), NULL, MB_ICONERROR);
+            return;
+        }
 
         DoStartWatcher(hwnd, &data);
     }
