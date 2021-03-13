@@ -377,7 +377,11 @@ void OnOK(HWND hwnd)
             return;
         }
 
-        DoStartWatcher(hwnd, &data);
+        if (DoStartWatcher(hwnd, &data))
+        {
+            s_bWatching = TRUE;
+            DoEnableControls(hwnd, FALSE);
+        }
     }
     else
     {
