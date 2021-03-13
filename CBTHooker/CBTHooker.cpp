@@ -156,7 +156,7 @@ static LPTSTR DoGetParams(HWND hwnd, CBTDATA *pData)
         sz5[0] = 0;
 
     StringCbPrintf(s_szText, sizeof(s_szText),
-        TEXT("/notity %u /code %d /action %u /self %u ")
+        TEXT("/notify %lu /code %d /action %u /self %u ")
         TEXT("%s %s %s %s %s"),
         (ULONG)(ULONG_PTR)pData->hwndNotify,
         pData->nCode,
