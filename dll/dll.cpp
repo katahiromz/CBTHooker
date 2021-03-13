@@ -220,15 +220,24 @@ static BOOL DoesMatch(HWND hwnd, CBTDATA *pData)
 }
 
 static VOID
-DoTarget(HWND hwnd, CBTDATA *pData, INT nCode)
+DoTarget(WPARAM wParam, CBTDATA *pData, INT nCode)
 {
-    if (DoesMatch(hwnd, pData))
+    switch (nCode)
     {
+    case HCBT_CLICKSKIPPED: case HCBT_KEYSKIPPED:
+    case HCBT_QS: case HCBT_SYSCOMMAND:
+        PostMessage(pData->hwndNotify, WM_MYNOTIFY, wParam, MAKELPARAM(nCode, TRUE));
+        return;
+    default:
+        break;
+    }
+
+    if (DoesMatch((HWND)wParam, pData))
+    {
+        HWND hwnd = (HWND)wParam;
         pData->hwndFound = hwnd;
         DoAction(hwnd, pData->iAction, pData);
-        PostMessage(pData->hwndNotify, WM_MYNOTIFY,
-                    reinterpret_cast<WPARAM>(hwnd),
-                    MAKELPARAM(nCode, TRUE));
+        PostMessage(pData->hwndNotify, WM_MYNOTIFY, wParam, MAKELPARAM(nCode, TRUE));
     }
 }
 
@@ -241,17 +250,14 @@ CBTProc(INT nCode, WPARAM wParam, LPARAM lParam)
     {
         CBTDATA *pData = pMap->pData;
         hHook = pData->hHook;
-        HWND hwnd = reinterpret_cast<HWND>(wParam);
         switch (nCode)
         {
-        case HCBT_ACTIVATE:
-        case HCBT_CREATEWND:
-        case HCBT_DESTROYWND:
-        case HCBT_MINMAX:
-        case HCBT_MOVESIZE:
-        case HCBT_SETFOCUS:
+        case HCBT_ACTIVATE: case HCBT_CREATEWND: case HCBT_DESTROYWND:
+        case HCBT_MINMAX: case HCBT_MOVESIZE: case HCBT_SETFOCUS:
+        case HCBT_MOVESIZE: case HCBT_CLICKSKIPPED: case HCBT_KEYSKIPPED:
+        case HCBT_QS: case HCBT_SYSCOMMAND:
             if (pData->nCode == nCode)
-                DoTarget(hwnd, pData, nCode);
+                DoTarget(wParam, pData, nCode);
             break;
         }
         DoUnMap(pMap);

@@ -12,6 +12,11 @@
 #define IDS_HCBT_DESTROYWND                 102
 #define IDS_HCBT_MINMAX                     103
 #define IDS_HCBT_SETFOCUS                   104
+#define IDS_HCBT_MOVESIZE                   105
+#define IDS_HCBT_CLICKSKIPPED               106
+#define IDS_HCBT_KEYSKIPPED                 107
+#define IDS_HCBT_QS                         108
+#define IDS_HCBT_SYSCOMMAND                 109
 #define IDS_AT_NOTHING                      200
 #define IDS_AT_SUSPEND                      201
 #define IDS_AT_RESUME                       202

@@ -36,3 +36,4 @@ lib*.a
 *.ninja
 .ninja*
 CBTHooker-*/
+*.zip

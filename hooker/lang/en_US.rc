@@ -58,6 +58,11 @@ STRINGTABLE
     IDS_TOOVAGUE, "The information is too vague. Please enter a little more information."
     IDS_CANTSTARTPROCESS, "The process could not be started."
     IDS_CHOOSECBTTYPE, "Please specify the CBT type."
+    IDS_HCBT_MOVESIZE, "HCBT_MOVESIZE"
+    IDS_HCBT_CLICKSKIPPED, "HCBT_CLICKSKIPPED"
+    IDS_HCBT_KEYSKIPPED, "HCBT_KEYSKIPPED"
+    IDS_HCBT_QS, "HCBT_QS"
+    IDS_HCBT_SYSCOMMAND, "HCBT_SYSCOMMAND"
 }
 
 //////////////////////////////////////////////////////////////////////////////

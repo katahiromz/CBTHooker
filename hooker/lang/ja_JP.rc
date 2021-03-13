@@ -58,6 +58,11 @@ STRINGTABLE
     IDS_TOOVAGUE, "情報が漠然としすぎてます。もう少し情報を入力して下さい。"
     IDS_CANTSTARTPROCESS, "プロセスを起動できませんでした。"
     IDS_CHOOSECBTTYPE, "CBT の種類を指定して下さい。"
+    IDS_HCBT_MOVESIZE, "HCBT_MOVESIZE"
+    IDS_HCBT_CLICKSKIPPED, "HCBT_CLICKSKIPPED"
+    IDS_HCBT_KEYSKIPPED, "HCBT_KEYSKIPPED"
+    IDS_HCBT_QS, "HCBT_QS"
+    IDS_HCBT_SYSCOMMAND, "HCBT_SYSCOMMAND"
 }
 
 //////////////////////////////////////////////////////////////////////////////

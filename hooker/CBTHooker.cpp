@@ -72,7 +72,9 @@ BOOL OnInitDialog(HWND hwnd, HWND hwndFocus, LPARAM lParam)
     static const UINT s_cbt_sids[] =
     {
         IDS_HCBT_ACTIVATE, IDS_HCBT_CREATEWND, IDS_HCBT_DESTROYWND,
-        IDS_HCBT_MINMAX, IDS_HCBT_SETFOCUS
+        IDS_HCBT_MINMAX, IDS_HCBT_SETFOCUS, IDS_HCBT_MOVESIZE,
+        IDS_HCBT_CLICKSKIPPED, IDS_HCBT_KEYSKIPPED, IDS_HCBT_QS,
+        IDS_HCBT_SYSCOMMAND
     };
     for (auto id : s_cbt_sids)
     {
@@ -328,6 +330,11 @@ BOOL DoPrepareData(HWND hwnd, CBTDATA& data)
     case 2: data.nCode = HCBT_DESTROYWND; break;
     case 3: data.nCode = HCBT_MINMAX; break;
     case 4: data.nCode = HCBT_SETFOCUS; break;
+    case 5: data.nCode = HCBT_MOVESIZE; break;
+    case 6: data.nCode = HCBT_CLICKSKIPPED; break;
+    case 7: data.nCode = HCBT_KEYSKIPPED; break;
+    case 8: data.nCode = HCBT_QS; break;
+    case 9: data.nCode = HCBT_SYSCOMMAND; break;
     default:
         MessageBox(hwnd, LoadStringDx(IDS_CHOOSECBTTYPE), NULL, MB_ICONERROR);
         return FALSE;
@@ -556,12 +563,13 @@ void OnCommand(HWND hwnd, int id, HWND hwndCtl, UINT codeNotify)
 }
 
 static void
-OnMyNotify(HWND hwndNotify, HWND hwndTarget, INT nCode, BOOL fRestart)
+OnMyNotify(HWND hwndNotify, WPARAM wParam, INT nCode, BOOL fRestart)
 {
     TCHAR szText[MAX_PATH * 3];
     DWORD tid, pid;
     TCHAR cls[MAX_PATH], txt[MAX_PATH];
 
+    HWND hwndTarget = (HWND)wParam;
     tid = GetWindowThreadProcessId(hwndTarget, &pid);
     cls[0] = 0;
     GetClassName(hwndTarget, cls, MAX_PATH);
@@ -601,6 +609,26 @@ OnMyNotify(HWND hwndNotify, HWND hwndTarget, INT nCode, BOOL fRestart)
             TEXT("HCBT_SETFOCUS(hwnd:%p, pid:%lu (0x%lX), tid:%lu (0x%lX), cls:'%s', txt:'%s')\r\n"),
             hwndTarget, pid, pid, tid, tid, cls, txt);
         break;
+    case HCBT_MOVESIZE:
+        StringCbPrintf(szText, sizeof(szText),
+            TEXT("HCBT_MOVESIZE(hwnd:%p, pid:%lu (0x%lX), tid:%lu (0x%lX), cls:'%s', txt:'%s')\r\n"),
+            hwndTarget, pid, pid, tid, tid, cls, txt);
+        break;
+    case HCBT_CLICKSKIPPED:
+        StringCbPrintf(szText, sizeof(szText),
+            TEXT("HCBT_CLICKSKIPPED(wParam:%p)\r\n"), wParam);
+        break;
+    case HCBT_KEYSKIPPED:
+        StringCbPrintf(szText, sizeof(szText),
+            TEXT("HCBT_KEYSKIPPED(vk:%u (0x%X))\r\n"), (UINT)wParam, (UINT)wParam);
+        break;
+    case HCBT_QS:
+        StringCbPrintf(szText, sizeof(szText), TEXT("HCBT_QS()\r\n"));
+        break;
+    case HCBT_SYSCOMMAND:
+        StringCbPrintf(szText, sizeof(szText), TEXT("HCBT_SYSCOMMAND(cmd:%u (0x%X))\r\n"),
+                       (UINT)wParam, (UINT)wParam);
+        break;
     }
 
     DoAddText(hwndNotify, szText);
@@ -638,7 +666,7 @@ DialogProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
         HANDLE_MSG(hwnd, WM_COMMAND, OnCommand);
         HANDLE_MSG(hwnd, WM_DESTROY, OnDestroy);
     case WM_MYNOTIFY:
-        OnMyNotify(hwnd, reinterpret_cast<HWND>(wParam), LOWORD(lParam), HIWORD(lParam));
+        OnMyNotify(hwnd, wParam, LOWORD(lParam), HIWORD(lParam));
         break;
     }
     return 0;
