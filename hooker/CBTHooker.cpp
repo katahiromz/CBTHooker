@@ -335,7 +335,7 @@ BOOL DoPrepareData(HWND hwnd, CBTDATA& data)
     case 7: data.nCode = HCBT_KEYSKIPPED; break;
     case 8: data.nCode = HCBT_QS; break;
     case 9: data.nCode = HCBT_SYSCOMMAND; break;
-    case 10: data.nCode = 0; break;
+    case 10: data.nCode = -1; break;
     default:
         MessageBox(hwnd, LoadStringDx(IDS_CHOOSECBTTYPE), NULL, MB_ICONERROR);
         return FALSE;
