@@ -34,6 +34,23 @@ LPTSTR LoadStringDx(INT nID)
     return pszBuff;
 }
 
+static BOOL DoChangeMessageFilter(HWND hwnd, UINT message, DWORD dwFlag)
+{
+    typedef BOOL (WINAPI *FN_ChangeWindowMessageFilterEx)(HWND, UINT, DWORD, PCHANGEFILTERSTRUCT);
+    typedef BOOL (WINAPI *FN_ChangeWindowMessageFilter)(UINT, DWORD);
+
+    HMODULE hUser32 = GetModuleHandle(TEXT("user32"));
+    auto fn1 = (FN_ChangeWindowMessageFilterEx)GetProcAddress(hUser32, "ChangeWindowMessageFilterEx");
+    if (fn1)
+    {
+        return (*fn1)(hwnd, message, MSGFLT_ALLOW, NULL);
+    }
+    auto fn2 = (FN_ChangeWindowMessageFilter)GetProcAddress(hUser32, "ChangeWindowMessageFilter");
+    if (!fn2)
+        return FALSE;
+    return (*fn2)(message, dwFlag);
+}
+
 void DoAddText(HWND hwnd, LPCTSTR pszText)
 {
     HWND hwndEdit = GetDlgItem(hwnd, edt1);
@@ -45,6 +62,8 @@ void DoAddText(HWND hwnd, LPCTSTR pszText)
 
 BOOL OnInitDialog(HWND hwnd, HWND hwndFocus, LPARAM lParam)
 {
+    DoChangeMessageFilter(hwnd, WM_MYNOTIFY, MSGFLT_ADD);
+
     HICON hIcon = LoadIcon(s_hInst, MAKEINTRESOURCE(IDI_MAINICON));
 
     SendMessage(hwnd, WM_SETICON, ICON_BIG, (LPARAM)hIcon);
