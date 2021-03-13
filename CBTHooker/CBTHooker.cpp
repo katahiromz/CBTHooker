@@ -82,7 +82,7 @@ BOOL OnInitDialog(HWND hwnd, HWND hwndFocus, LPARAM lParam)
 
     static const LPCTSTR s_cls[] =
     {
-        TEXT("BUTTON"), TEXT("COMBOBOX"), TEXT("EDIT"), TEXT("LISTBOX"),
+        TEXT("#32770"), TEXT("BUTTON"), TEXT("COMBOBOX"), TEXT("EDIT"), TEXT("LISTBOX"),
         TEXT("SCROLLBAR"), TEXT("STATIC"), TEXT("ComboBoxEx32"),
         TEXT("NativeFontCtl"), TEXT("ReBarWindow32"), TEXT("SysAnimate32"),
         TEXT("SysDateTimePick32"), TEXT("SysHeader32"), TEXT("SysIPAddress32"),
