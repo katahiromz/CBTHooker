@@ -610,11 +610,6 @@ OnMyNotify(HWND hwndNotify, WPARAM wParam, INT nCode, BOOL fRestart)
             TEXT("HCBT_SETFOCUS(hwnd:%p, pid:%lu (0x%lX), tid:%lu (0x%lX), cls:'%s', txt:'%s')\r\n"),
             hwndTarget, pid, pid, tid, tid, cls, txt);
         break;
-    case HCBT_MOVESIZE:
-        StringCbPrintf(szText, sizeof(szText),
-            TEXT("HCBT_MOVESIZE(hwnd:%p, pid:%lu (0x%lX), tid:%lu (0x%lX), cls:'%s', txt:'%s')\r\n"),
-            hwndTarget, pid, pid, tid, tid, cls, txt);
-        break;
     case HCBT_CLICKSKIPPED:
         StringCbPrintf(szText, sizeof(szText),
             TEXT("HCBT_CLICKSKIPPED(wParam:%p)\r\n"), wParam);

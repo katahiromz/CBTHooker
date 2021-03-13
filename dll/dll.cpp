@@ -254,8 +254,8 @@ CBTProc(INT nCode, WPARAM wParam, LPARAM lParam)
         {
         case HCBT_ACTIVATE: case HCBT_CREATEWND: case HCBT_DESTROYWND:
         case HCBT_MINMAX: case HCBT_MOVESIZE: case HCBT_SETFOCUS:
-        case HCBT_MOVESIZE: case HCBT_CLICKSKIPPED: case HCBT_KEYSKIPPED:
-        case HCBT_QS: case HCBT_SYSCOMMAND:
+        case HCBT_CLICKSKIPPED: case HCBT_KEYSKIPPED: case HCBT_QS:
+        case HCBT_SYSCOMMAND:
             if (pData->nCode == nCode || pData->nCode == 0)
                 DoTarget(wParam, pData, nCode);
             break;
