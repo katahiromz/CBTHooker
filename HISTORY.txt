@@ -1,0 +1,6 @@
+# History of CBT Hooker
+
+- v.1.1 (2021.03.13)
+    - First release.
+- v.1.2 (2021.XX.XX)
+    - Fixed key binds.
