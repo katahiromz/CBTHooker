@@ -25,6 +25,8 @@
 #define IDS_STARTWATCH                      300
 #define IDS_ENDWATCH                        301
 #define IDS_TOOVAGUE                        302
+#define IDS_CANTSTARTPROCESS                303
+#define IDS_CHOOSECBTTYPE                   304
 
 #ifdef APSTUDIO_INVOKED
     #ifndef APSTUDIO_READONLY_SYMBOLS

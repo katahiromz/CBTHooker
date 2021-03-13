@@ -56,6 +56,8 @@ STRINGTABLE
     IDS_STARTWATCH, "Start &watching"
     IDS_ENDWATCH, "End &watching"
     IDS_TOOVAGUE, "The information is too vague. Please enter a little more information."
+    IDS_CANTSTARTPROCESS, "The process could not be started."
+    IDS_CHOOSECBTTYPE, "Please specify the CBT type."
 }
 
 //////////////////////////////////////////////////////////////////////////////

@@ -243,7 +243,7 @@ BOOL DoStartWatcher(HWND hwnd, CBTDATA *pData)
     }
     else
     {
-        MessageBox(hwnd, TEXT("ERROR #1"), NULL, MB_ICONERROR);
+        MessageBox(hwnd, LoadStringDx(IDS_CANTSTARTPROCESS), NULL, MB_ICONERROR);
         return FALSE;
     }
 
@@ -282,7 +282,7 @@ BOOL DoStartWatcher(HWND hwnd, CBTDATA *pData)
     else
     {
         PostMessage(hwndWatcher32, WATCH_END, 0, 0);
-        MessageBox(hwnd, TEXT("ERROR #2"), NULL, MB_ICONERROR);
+        MessageBox(hwnd, LoadStringDx(IDS_CANTSTARTPROCESS), NULL, MB_ICONERROR);
         return FALSE;
     }
 #endif
@@ -329,7 +329,7 @@ BOOL DoPrepareData(HWND hwnd, CBTDATA& data)
     case 3: data.nCode = HCBT_MINMAX; break;
     case 4: data.nCode = HCBT_SETFOCUS; break;
     default:
-        MessageBox(hwnd, TEXT("Please choose CBT type."), NULL, MB_ICONERROR);
+        MessageBox(hwnd, LoadStringDx(IDS_CHOOSECBTTYPE), NULL, MB_ICONERROR);
         return FALSE;
     }
 
