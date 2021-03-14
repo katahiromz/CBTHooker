@@ -13,28 +13,11 @@
     typedef std::string tstring;
 #endif
 
-static BOOL DoChangeMessageFilter(HWND hwnd, UINT message, DWORD dwFlag)
-{
-    typedef BOOL (WINAPI *FN_ChangeWindowMessageFilterEx)(HWND, UINT, DWORD, PCHANGEFILTERSTRUCT);
-    typedef BOOL (WINAPI *FN_ChangeWindowMessageFilter)(UINT, DWORD);
-
-    HMODULE hUser32 = GetModuleHandleW(L"user32");
-    auto fn1 = (FN_ChangeWindowMessageFilterEx)GetProcAddress(hUser32, "ChangeWindowMessageFilterEx");
-    if (fn1)
-    {
-        return (*fn1)(hwnd, message, MSGFLT_ALLOW, NULL);
-    }
-    auto fn2 = (FN_ChangeWindowMessageFilter)GetProcAddress(hUser32, "ChangeWindowMessageFilter");
-    if (fn2)
-        return (*fn2)(message, dwFlag);
-    return FALSE;
-}
-
 BOOL OnCreate(HWND hwnd, LPCREATESTRUCT lpCreateStruct)
 {
-    DoChangeMessageFilter(hwnd, WATCH_START, MSGFLT_ADD);
-    DoChangeMessageFilter(hwnd, WATCH_END, MSGFLT_ADD);
-    DoChangeMessageFilter(hwnd, WATCH_ACTION, MSGFLT_ADD);
+    DoChangeMessageFilter(hwnd, WATCH_START, TRUE);
+    DoChangeMessageFilter(hwnd, WATCH_END, TRUE);
+    DoChangeMessageFilter(hwnd, WATCH_ACTION, TRUE);
 
     LPVOID pvData = lpCreateStruct->lpCreateParams;
     SetWindowLongPtr(hwnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(pvData));

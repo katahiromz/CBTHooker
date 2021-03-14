@@ -36,30 +36,6 @@ LPTSTR LoadStringDx(INT nID)
     return pszBuff;
 }
 
-static BOOL EnableProcessPriviledge(LPCTSTR pszSE_)
-{
-    BOOL f;
-    HANDLE hProcess;
-    HANDLE hToken;
-    LUID luid;
-    TOKEN_PRIVILEGES tp;
-    
-    f = FALSE;
-    hProcess = GetCurrentProcess();
-    if (OpenProcessToken(hProcess, TOKEN_ADJUST_PRIVILEGES, &hToken))
-    {
-        if (LookupPrivilegeValue(NULL, pszSE_, &luid))
-        {
-            tp.PrivilegeCount = 1;
-            tp.Privileges[0].Attributes = SE_PRIVILEGE_ENABLED;
-            tp.Privileges[0].Luid = luid;
-            f = AdjustTokenPrivileges(hToken, FALSE, &tp, 0, NULL, NULL);
-        }
-        CloseHandle(hToken);
-    }
-    return f;
-}
-
 static BOOL DoSuspendProcess(CBTDATA *pData, DWORD pid, BOOL bSuspend)
 {
     if (pData->self_pid == pid || pData->dwMyPID == pid)
@@ -226,23 +202,6 @@ VOID DoItNow(ACTION_TYPE iAction, CBTDATA *pData)
     EnumWindows(EnumWindowsProc, reinterpret_cast<LPARAM>(pData));
 }
 
-static BOOL DoChangeMessageFilter(HWND hwnd, UINT message, DWORD dwFlag)
-{
-    typedef BOOL (WINAPI *FN_ChangeWindowMessageFilterEx)(HWND, UINT, DWORD, PCHANGEFILTERSTRUCT);
-    typedef BOOL (WINAPI *FN_ChangeWindowMessageFilter)(UINT, DWORD);
-
-    HMODULE hUser32 = GetModuleHandle(TEXT("user32"));
-    auto fn1 = (FN_ChangeWindowMessageFilterEx)GetProcAddress(hUser32, "ChangeWindowMessageFilterEx");
-    if (fn1)
-    {
-        return (*fn1)(hwnd, message, MSGFLT_ALLOW, NULL);
-    }
-    auto fn2 = (FN_ChangeWindowMessageFilter)GetProcAddress(hUser32, "ChangeWindowMessageFilter");
-    if (fn2)
-        return (*fn2)(message, dwFlag);
-    return FALSE;
-}
-
 void DoAddText(HWND hwnd, LPCTSTR pszText)
 {
     HWND hwndEdit = GetDlgItem(hwnd, edt1);
@@ -254,7 +213,7 @@ void DoAddText(HWND hwnd, LPCTSTR pszText)
 
 BOOL OnInitDialog(HWND hwnd, HWND hwndFocus, LPARAM lParam)
 {
-    DoChangeMessageFilter(hwnd, WM_MYNOTIFY, MSGFLT_ADD);
+    DoChangeMessageFilter(hwnd, WM_MYNOTIFY, TRUE);
 
     HICON hIcon = LoadIcon(s_hInst, MAKEINTRESOURCE(IDI_MAINICON));
 
