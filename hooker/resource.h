@@ -28,6 +28,11 @@
 #define IDS_AT_HIDE                         207
 #define IDS_AT_CLOSE                        208
 #define IDS_AT_DESTROY                      209
+#define IDS_AT_SHOWNA                       210
+#define IDS_AT_BRINGTOTOP                   211
+#define IDS_AT_SINKTOBOTTOM                 212
+#define IDS_AT_MAKETOPMOST                  213
+#define IDS_AT_MAKENONTOPMOST               214
 #define IDS_STARTWATCH                      300
 #define IDS_ENDWATCH                        301
 #define IDS_TOOVAGUE                        302

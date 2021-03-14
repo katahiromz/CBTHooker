@@ -64,6 +64,11 @@ STRINGTABLE
     IDS_HCBT_QS, "HCBT_QS"
     IDS_HCBT_SYSCOMMAND, "HCBT_SYSCOMMAND"
     IDS_ALLCBT, "(すべての CBT タイプ)"
+    IDS_AT_SHOWNA, "ウィンドウを表示 (アクティブ化しない)"
+    IDS_AT_BRINGTOTOP, "ウィンドウを一番上に移動 "
+    IDS_AT_SINKTOBOTTOM, "ウィンドウを底に沈める"
+    IDS_AT_MAKETOPMOST, "ウィンドウを TopMost にする"
+    IDS_AT_MAKENONTOPMOST, "ウィンドウの TopMost を解除する"
 }
 
 //////////////////////////////////////////////////////////////////////////////

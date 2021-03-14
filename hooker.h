@@ -16,6 +16,8 @@
 #define WATCH_START  (WM_APP + 100)
 #define WATCH_END (WM_APP + 101)
 #define WATCH_ACTION (WM_APP + 102)
+#define WATCHER_BRINGTOTOP (WM_APP + 103)
+#define WATCHER_SINKTOBOTTOM (WM_APP + 104)
 
 #define WM_MYNOTIFY  (WM_APP + 200)
 
@@ -28,7 +30,12 @@ typedef enum ACTION_TYPE
     AT_MINIMIZE,
     AT_RESTORE,
     AT_SHOW,
+    AT_SHOWNA,
     AT_HIDE,
+    AT_BRINGTOTOP,
+    AT_SINKTOBOTTOM,
+    AT_MAKETOPMOST,
+    AT_MAKENONTOPMOST,
     AT_CLOSE,
     AT_DESTROY,
 } ACTION_TYPE;
@@ -36,6 +43,7 @@ typedef enum ACTION_TYPE
 typedef struct CBTDATA
 {
     HWND hwndNotify;
+    HWND hwndWatcher;
     INT nCode;
     ACTION_TYPE iAction;
     HHOOK hHook;

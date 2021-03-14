@@ -16,11 +16,24 @@
 static HINSTANCE s_hInst = NULL;
 static BOOL s_bWatching = FALSE;
 
+// TODO: This must be synced with ACTION_TYPE.
 static const UINT s_action_ids[] =
 {
-    IDS_AT_NOTHING, IDS_AT_SUSPEND, IDS_AT_RESUME, IDS_AT_MAXIMIZE,
-    IDS_AT_MINIMIZE, IDS_AT_RESTORE, IDS_AT_SHOW, IDS_AT_HIDE,
-    IDS_AT_CLOSE, IDS_AT_DESTROY
+    IDS_AT_NOTHING,
+    IDS_AT_SUSPEND,
+    IDS_AT_RESUME,
+    IDS_AT_MAXIMIZE,
+    IDS_AT_MINIMIZE,
+    IDS_AT_RESTORE,
+    IDS_AT_SHOW,
+    IDS_AT_SHOWNA,
+    IDS_AT_HIDE,
+    IDS_AT_BRINGTOTOP,
+    IDS_AT_SINKTOBOTTOM,
+    IDS_AT_MAKETOPMOST,
+    IDS_AT_MAKENONTOPMOST,
+    IDS_AT_CLOSE,
+    IDS_AT_DESTROY
 };
 
 LPTSTR LoadStringDx(INT nID)
@@ -116,8 +129,35 @@ VOID JustDoIt(HWND hwnd, CBTDATA *pData)
     case AT_SHOW: // Show
         ShowWindowAsync(hwnd, SW_SHOWNORMAL);
         break;
+    case AT_SHOWNA: // Show (No Activation)
+        ShowWindowAsync(hwnd, SW_SHOWNOACTIVATE);
+        break;
     case AT_HIDE: // Hide
         ShowWindowAsync(hwnd, SW_HIDE);
+        break;
+    case AT_BRINGTOTOP: // Bring to top
+        if (pData->nCode != HCBT_ACTIVATE || !s_bWatching)
+        {
+            BringWindowToTop(hwnd);
+        }
+        break;
+    case AT_SINKTOBOTTOM:
+        {
+            UINT uSWP_ = SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE | SWP_NOOWNERZORDER;
+            SetWindowPos(hwnd, HWND_BOTTOM, 0, 0, 0, 0, uSWP_);
+        }
+        break;
+    case AT_MAKETOPMOST:
+        {
+            UINT uSWP_ = SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE | SWP_NOOWNERZORDER;
+            SetWindowPos(hwnd, HWND_TOPMOST, 0, 0, 0, 0, uSWP_);
+        }
+        break;
+    case AT_MAKENONTOPMOST:
+        {
+            UINT uSWP_ = SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE | SWP_NOOWNERZORDER;
+            SetWindowPos(hwnd, HWND_NOTOPMOST, 0, 0, 0, 0, uSWP_);
+        }
         break;
     case AT_CLOSE: // Close
         PostMessage(hwnd, WM_CLOSE, 0, 0);

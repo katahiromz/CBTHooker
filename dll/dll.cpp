@@ -135,8 +135,34 @@ DoAction(HWND hwnd, ACTION_TYPE iAction, CBTDATA *pData OPTIONAL)
     case AT_SHOW: // Show
         ShowWindowAsync(hwnd, SW_SHOWNORMAL);
         break;
+    case AT_SHOWNA: // Show (No Activation)
+        ShowWindowAsync(hwnd, SW_SHOWNOACTIVATE);
+        break;
     case AT_HIDE: // Hide
         ShowWindowAsync(hwnd, SW_HIDE);
+        break;
+    case AT_BRINGTOTOP: // Bring to top
+        if (pData->nCode != HCBT_ACTIVATE || pData->hHook == NULL)
+        {
+            PostMessage(pData->hwndWatcher, WATCHER_BRINGTOTOP, (WPARAM)hwnd, 0);
+        }
+        break;
+    case AT_SINKTOBOTTOM:
+        {
+            PostMessage(pData->hwndWatcher, WATCHER_SINKTOBOTTOM, (WPARAM)hwnd, 0);
+        }
+        break;
+    case AT_MAKETOPMOST:
+        {
+            UINT uSWP_ = SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE | SWP_NOOWNERZORDER;
+            SetWindowPos(hwnd, HWND_TOPMOST, 0, 0, 0, 0, uSWP_);
+        }
+        break;
+    case AT_MAKENONTOPMOST:
+        {
+            UINT uSWP_ = SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE | SWP_NOOWNERZORDER;
+            SetWindowPos(hwnd, HWND_NOTOPMOST, 0, 0, 0, 0, uSWP_);
+        }
         break;
     case AT_CLOSE: // Close
         PostMessage(hwnd, WM_CLOSE, 0, 0);

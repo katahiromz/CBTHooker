@@ -64,6 +64,11 @@ STRINGTABLE
     IDS_HCBT_QS, "HCBT_QS"
     IDS_HCBT_SYSCOMMAND, "HCBT_SYSCOMMAND"
     IDS_ALLCBT, "(All CBT types)"
+    IDS_AT_SHOWNA, "Show window (No activation)"
+    IDS_AT_BRINGTOTOP, "Bring window to top"
+    IDS_AT_SINKTOBOTTOM, "Sink window to bottom"
+    IDS_AT_MAKETOPMOST, "Make window topmost"
+    IDS_AT_MAKENONTOPMOST, "Make window non-topmost"
 }
 
 //////////////////////////////////////////////////////////////////////////////

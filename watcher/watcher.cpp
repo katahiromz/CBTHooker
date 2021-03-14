@@ -18,6 +18,8 @@ BOOL OnCreate(HWND hwnd, LPCREATESTRUCT lpCreateStruct)
     DoChangeMessageFilter(hwnd, WATCH_START, TRUE);
     DoChangeMessageFilter(hwnd, WATCH_END, TRUE);
     DoChangeMessageFilter(hwnd, WATCH_ACTION, TRUE);
+    DoChangeMessageFilter(hwnd, WATCHER_BRINGTOTOP, TRUE);
+    DoChangeMessageFilter(hwnd, WATCHER_SINKTOBOTTOM, TRUE);
 
     LPVOID pvData = lpCreateStruct->lpCreateParams;
     SetWindowLongPtr(hwnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(pvData));
@@ -26,6 +28,7 @@ BOOL OnCreate(HWND hwnd, LPCREATESTRUCT lpCreateStruct)
 
 LRESULT OnStartWatch(HWND hwnd, CBTDATA *pData)
 {
+    pData->hwndWatcher = hwnd;
     return DoStartWatch(pData, GetCurrentProcessId());
 }
 
@@ -36,15 +39,38 @@ LRESULT OnEndWatch(HWND hwnd, CBTDATA *pData)
     return ret;
 }
 
+LRESULT OnBringToTop(HWND hwnd, CBTDATA *pData, HWND hwndTarget)
+{
+    return BringWindowToTop(hwndTarget);
+}
+
+LRESULT OnSinkToBottom(HWND hwnd, CBTDATA *pData, HWND hwndTarget)
+{
+    UINT uSWP_ = SWP_NOMOVE | SWP_NOSIZE | SWP_NOOWNERZORDER | SWP_NOACTIVATE;
+    return SetWindowPos(hwndTarget, HWND_BOTTOM, 0, 0, 0, 0, uSWP_);
+}
+
 LRESULT OnAction(HWND hwnd, CBTDATA *pData, INT iAction)
 {
     if (HWND hwndTarget = DoGetTargetWindow())
     {
         switch (iAction)
         {
-        case AT_NOTHING: case AT_SUSPEND: case AT_RESUME: case AT_MAXIMIZE:
-        case AT_MINIMIZE: case AT_RESTORE: case AT_SHOW: case AT_HIDE:
-        case AT_CLOSE: case AT_DESTROY:
+        case AT_NOTHING:
+        case AT_SUSPEND:
+        case AT_RESUME:
+        case AT_MAXIMIZE:
+        case AT_MINIMIZE:
+        case AT_RESTORE:
+        case AT_SHOW:
+        case AT_SHOWNA:
+        case AT_HIDE:
+        case AT_BRINGTOTOP:
+        case AT_SINKTOBOTTOM:
+        case AT_MAKETOPMOST:
+        case AT_MAKENONTOPMOST:
+        case AT_CLOSE:
+        case AT_DESTROY:
             DoAction(hwndTarget, static_cast<ACTION_TYPE>(iAction), NULL);
             break;
         default:
@@ -74,6 +100,10 @@ WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
             return OnEndWatch(hwnd, pData);
         else if (uMsg == WATCH_ACTION)
             return OnAction(hwnd, pData, (INT)wParam);
+        else if (uMsg == WATCHER_BRINGTOTOP)
+            return OnBringToTop(hwnd, pData, (HWND)wParam);
+        else if (uMsg == WATCHER_SINKTOBOTTOM)
+            return OnSinkToBottom(hwnd, pData, (HWND)wParam);
         return DefWindowProc(hwnd, uMsg, wParam, lParam);
     }
     return 0;
@@ -194,9 +224,21 @@ EXTERN_C INT wmain(INT argc, LPWSTR *argv)
 
     switch (iAction)
     {
-    case AT_NOTHING: case AT_SUSPEND: case AT_RESUME:
-    case AT_MAXIMIZE: case AT_MINIMIZE: case AT_RESTORE:
-    case AT_SHOW: case AT_HIDE: case AT_CLOSE: case AT_DESTROY:
+    case AT_NOTHING:
+    case AT_SUSPEND:
+    case AT_RESUME:
+    case AT_MAXIMIZE:
+    case AT_MINIMIZE:
+    case AT_RESTORE:
+    case AT_SHOW:
+    case AT_SHOWNA:
+    case AT_HIDE:
+    case AT_BRINGTOTOP:
+    case AT_SINKTOBOTTOM:
+    case AT_MAKETOPMOST:
+    case AT_MAKENONTOPMOST:
+    case AT_CLOSE:
+    case AT_DESTROY:
         break;
     default:
         fprintf(stderr, "ERROR: invalid action\n");
